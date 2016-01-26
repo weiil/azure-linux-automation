@@ -7,10 +7,10 @@ import commands
 import signal
 
 parser = ArgumentParser()
-parser.add_argument('-d', '--duration', help='specify how long run time for testing', required=True, type=int)
-parser.add_argument('-p', '--package', help='spcecify package name to keep install/remove from repo', required=True)
-parser.add_argument('-t', '--timeout', help='specify the base value to evaluate elapsed time of downloading/installing package every time', required=True, type=int)
-parser.add_argument('-s', '--save', help='save test data', required=False, action='store_true')
+parser.add_argument('-d', '--duration', help='specify how long run time(seconds) for the stress testing', required=True, type=int)
+parser.add_argument('-p', '--package', help='spcecify package name to keep downloading/installing/removing from repo', required=True)
+parser.add_argument('-t', '--timeout', help='specify the base value(seconds) to evaluate elapsed time of downloading/installing package every time', required=True, type=int)
+parser.add_argument('-s', '--save', help='save test data to log file', required=False, action='store_true')
 
 args = parser.parse_args()
 duration = args.duration
@@ -19,11 +19,26 @@ timeout = args.timeout
 
 pkg_download_path = "/tmp/rhui_stress"
 
+class RunlogWrapper:
+	def __init__(self):
+		pass
+	def info(self,msg):
+		RunLog.info(msg)
+		print(msg)
+	def error(self,msg):
+		RunLog.error(msg)
+		print(msg)
+		
+class MyTimeoutException(Exception):
+	pass
+
+logger = RunlogWrapper()
+
 def RunTest():
 	UpdateState("TestRunning")
-	RunLog.info('-'*30 + "RHUI STRESS TEST START" + '-'*30)
-	RunLog.info('Test Infomation:')
-	RunLog.info("\tTest package: %s, Test duration: %s, Test base value: %s" % (pkg, duration, timeout))
+	logger.info('-'*30 + "RHUI STRESS TEST START" + '-'*30)
+	logger.info('Test Infomation:')
+	logger.info("\tTest package: %s, Test duration: %s(seconds), Test base value: %s(seconds)" % (pkg, duration, timeout))
 	RunLog.info('')
 
 	download_details = []
@@ -42,6 +57,7 @@ def RunTest():
 		install_details.append(InstallPkg(pkg,counter,False))
 		UnrigsterSigHandler()
 		RemovePkg(pkg,counter)
+		print('Test Round #%s is finished.' % counter)
 		counter += 1
 
 	UpdateState("TestCompleted")
@@ -50,14 +66,19 @@ def RunTest():
 	if args.save:
 		t = time.localtime()
 		ts = "%d%02d%02d%02d%02d%02d" % (t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec)
-		with open(str.format('download-%s.log' % ts),'w') as f:
+		log_dl = str.format('download-%s.log' % ts)
+		log_inst = str.format('install-%s.log' % ts)
+		with open(log_dl,'w') as f:
 			for i in iter(download_details):
 				f.write(str(i[0])+'\t'+str(i[1])+'\n')
-		with open(str.format('install-%s.log' % ts),'w') as f:
-			for i in iter(download_details):
-				f.write(str(i[0])+'\t'+str(i[1])+'\n')
+		logger.info('Saved download test details to %s' % log_dl)
 
-	RunLog.info('-'*30 + 'TEST END' + '-'*30 )
+		with open(log_inst,'w') as f:
+			for i in iter(install_details):
+				f.write(str(i[0])+'\t'+str(i[1])+'\n')
+		logger.info('Saved install test details to %s' % log_inst)
+
+	logger.info('-'*30 + 'TEST END' + '-'*30 )
 
 def SigHandler(signum, frame):
 	raise MyTimeoutException('operation timeout!')
@@ -88,7 +109,7 @@ def InstallPkg(pkg, counter, download_only=True):
 		elapsed = time.time() - st
 		if int(rtc) == 0:
 			rst = True
-			RunLog.info('\tSUCCESS with %s seconds cost!' % str(elapsed))
+			RunLog.info('\tSUCCESS in %s seconds!' % str(elapsed))
 		else:
 			RunLog.error('\tFAIL with error: %s!' % out)
 	finally:
@@ -137,23 +158,23 @@ def AnalyseResult(l_download, l_install):
 			cost_of_valid_install = [x[1] for x in iter(l_install) if x[0]]
 
 			# summary
-			RunLog.info('-'*30 + "SUMMARY" + '-'*30)
-			RunLog.info('*'*15 + 'Download Part:')
-			RunLog.info('Total: %s, Success: %s, Fail: %s' % (len(l_download),success_download_count,fail_download_count))
+			logger.info('-'*30 + "SUMMARY" + '-'*30)
+			logger.info('*'*15 + 'Download Part:')
+			logger.info('Total: %s, Success: %s, Fail: %s' % (len(l_download),success_download_count,fail_download_count))
 			if len(cost_of_valid_download):
-				RunLog.info('\tThe fastest download costs %s seconds' % min(cost_of_valid_download))
-				RunLog.info('\tThe slowest download costs %s seconds' % max(cost_of_valid_download))
-				RunLog.info('\tThe average download costs %s seconds' % str(sum(cost_of_valid_download)/len(cost_of_valid_download)))
+				logger.info('\tThe fastest download in %s seconds' % min(cost_of_valid_download))
+				logger.info('\tThe slowest download in %s seconds' % max(cost_of_valid_download))
+				logger.info('\tThe average download in %s seconds' % str(sum(cost_of_valid_download)/len(cost_of_valid_download)))
 			else:
-				RunLog.error('\tNone valid download!!!')
-			RunLog.info('*'*15 + 'Install Part:')
-			RunLog.info('Total: %s Success: %s Fail: %s' % (len(l_install),success_install_count,fail_install_count))
+				logger.error('\tNone valid download!!!')
+			logger.info('*'*15 + 'Install Part:')
+			logger.info('Total: %s Success: %s Fail: %s' % (len(l_install),success_install_count,fail_install_count))
 			if len(cost_of_valid_install):
-				RunLog.info('\tThe fastest install costs %s seconds' % min(cost_of_valid_install))
-				RunLog.info('\tThe slowest install costs %s seconds' % max(cost_of_valid_install))
-				RunLog.info('\tThe average install costs %s seconds' % str(sum(cost_of_valid_install)/len(cost_of_valid_install)))
+				logger.info('\tThe fastest install in %s seconds' % min(cost_of_valid_install))
+				logger.info('\tThe slowest install in %s seconds' % max(cost_of_valid_install))
+				logger.info('\tThe average install in %s seconds' % str(sum(cost_of_valid_install)/len(cost_of_valid_install)))
 			else:
-				RunLog.error('\tNone valid install!!!')
+				logger.error('\tNone valid install!!!')
 				
 			if fail_download_count == 0 and fail_install_count == 0:
 				ResultLog.info('PASS')
@@ -162,14 +183,6 @@ def AnalyseResult(l_download, l_install):
 	except Exception as err:
 		print(err)
 
-def RunlogWrapper(m,msg):
-	if m == 'info':
-		RunLog.info(msg)
-	if m == 'error':
-		RunLog.error(msg)
-	print(msg)	
 
-class MyTimeoutException(Exception):
-	pass
 
 RunTest()
