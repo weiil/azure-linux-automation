@@ -4631,15 +4631,16 @@
 		</test>
 
 		<test>
-		  <testName>RHUI-STRESS-INST-UNINST</testName>
-		  <testScript>RHUI-STRESS-INST-UNINST.py</testScript>
-		  <testScriptPs1>RHUI-STRESS-INST-UNINST.ps1</testScriptPs1>
-		  <files>.\remote-scripts\azuremodules.py,.\remote-scripts\RHUI-STRESS-INST-UNINST.py</files>
+		  <testName>RHUI-STRESS-DOWNLOAD</testName>
+		  <entrytestScript>start-rhui-stress-test-in-background.py</entrytestScript>
+		  <testScript>RHUI-STRESS-DOWNLOAD.py</testScript>
+		  <testScriptPs1>RHUI-STRESS-DOWNLOAD.ps1</testScriptPs1>
+		  <files>.\remote-scripts\azuremodules.py,.\remote-scripts\RHUI-STRESS-DOWNLOAD.py,.\remote-scripts\start-rhui-stress-test-in-background.py</files>
 		  <setupType>RHUIStressDep</setupType>
 		  <parameters>
-			<duration>600</duration>
+			<duration>300</duration>
 			<pkg>gcc</pkg>
-			<timeout>15</timeout>			
+			<timeout>60</timeout>			
           </parameters>
 		  <TestType></TestType>
 		  <TestFeature></TestFeature>
@@ -5349,7 +5350,7 @@
 		<Cycle>
 			<cycleName>RHUI-Stress</cycleName>
 			<test>
-				<Name>RHUI-STRESS-INST-UNINST</Name>
+				<Name>RHUI-STRESS-DOWNLOAD</Name>
 			</test>
 		</Cycle>
 		
