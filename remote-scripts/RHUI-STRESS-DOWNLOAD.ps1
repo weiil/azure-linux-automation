@@ -6,6 +6,17 @@ $testResult1 = ""
 $testResult2 = ""
 $resultArr = @()
 
+Function RetryStartTest($vmuser, $vmpassword, $vmvip, $vmport)
+{
+	$out = '0'
+	while ($out -ne '1')
+	{
+		RunLinuxCmd -username $vmuser -password $vmpassword -ip $vmvip -port $vmport -command "python $($currentTestData.entrytestScript) -d $($currentTestData.parameters.duration) -p $($currentTestData.parameters.pkg) -t $($currentTestData.parameters.timeout) -s" -runAsSudo
+		sleep 5
+		$out = RunLinuxCmd -username $vmuser -password $vmpassword -ip $vmvip -port $vmport -command "cat Runtime.log | grep -i 'red hat' | wc -l"
+	}
+}
+
 $isDeployed = DeployVMS -setupType $currentTestData.setupType -Distro $Distro -xmlConfig $xmlConfig
 if ($isDeployed)
 {
@@ -33,8 +44,11 @@ if ($isDeployed)
 		RunLinuxCmd -username $user -password $password -ip $hs2VIP -port $hs2vm1sshport -command "chmod +x *" -runAsSudo
 
 		LogMsg "Executing : $($currentTestData.entrytestScript) on both RHEL6 and RHEL7"
-		RunLinuxCmd -username $user -password $password -ip $hs1VIP -port $hs1vm1sshport -command "python $($currentTestData.entrytestScript) -d $($currentTestData.parameters.duration) -p $($currentTestData.parameters.pkg) -t $($currentTestData.parameters.timeout) -s" -runAsSudo
-		RunLinuxCmd -username $user -password $password -ip $hs2VIP -port $hs2vm1sshport -command "python $($currentTestData.entrytestScript) -d $($currentTestData.parameters.duration) -p $($currentTestData.parameters.pkg) -t $($currentTestData.parameters.timeout) -s" -runAsSudo
+
+        RetryStartTest -vmuser $user -vmpassword $password -vmvip $hs1VIP -vmport $hs1vm1sshport
+		RetryStartTest -vmuser $user -vmpassword $password -vmvip $hs2VIP -vmport $hs2vm1sshport
+
+		LogMsg "RHUI stress testing is running..."
 		sleep $currentTestData.parameters.duration
 		sleep 20
 		RunLinuxCmd -username $user -password $password -ip $hs1VIP -port $hs1vm1sshport -command "mv Runtime.log $($currentTestData.testScript).log" -runAsSudo

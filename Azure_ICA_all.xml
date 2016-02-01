@@ -4638,9 +4638,9 @@
 		  <files>.\remote-scripts\azuremodules.py,.\remote-scripts\RHUI-STRESS-DOWNLOAD.py,.\remote-scripts\start-rhui-stress-test-in-background.py</files>
 		  <setupType>RHUIStressDep</setupType>
 		  <parameters>
-			<duration>300</duration>
+			<duration>1800</duration>
 			<pkg>gcc</pkg>
-			<timeout>60</timeout>			
+			<timeout>100</timeout>			
           </parameters>
 		  <TestType></TestType>
 		  <TestFeature></TestFeature>
