@@ -4958,6 +4958,54 @@
 		  <TestID>AzureTemplate_002</TestID>
 		</test>
 
+    <test>
+      <testName>Template-bosh-cf-deployment</testName>
+      <testScript></testScript>
+      <testScriptPs1>Template-bosh-cf-deployment.ps1</testScriptPs1>
+      <files></files>
+      <setupType></setupType>
+      <parameters>
+        <vmName>devbox</vmName>
+        <adminUsername>azureuser</adminUsername>
+        <sshKeyData>ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAlw8d7dOtKtTN/DmZ9TlT9UR3fh0FCLcqtM4KVoGmaI7k900l6RKPjyNfXdhlFcYMfGuVkwLawG4hb6O1238ZAFsOQGTu1JOfEsFTWmG3E51P6bZkHzYk/fdzVsdREFj78LdZvM9+5/fT1l3DJH4oQXqra1RUsvhdl0PvplfSOjy2RVXUiyT/KE39gJArNfRBwYHFvCsZNeviuNbVr4lZkEqVGsO3ohw2Z69WAJHgpWGFyzH7JfkK4GnBuW4V/1Ih8mtnSZ35QjDZR6gBOKQWEInuKv4IJu1+vwwUzFaXOwRcawElGcwN6REDR3r0PHU15c1WpxiZWTFzd6sf63FVAQ== rsa-key-20160422</sshKeyData>
+        <environment>AzureCloud</environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_003</TestID>
+    </test>
+
+    <test>
+      <testName>Template-bosh-cf-lifecycle-test</testName>
+      <testScript></testScript>
+      <testScriptPs1>Template-bosh-cf-lifecycle-test.ps1</testScriptPs1>
+      <files></files>
+      <setupType></setupType>
+      <parameters>
+        <vmName>devbox</vmName>
+        <adminUsername>azureuser</adminUsername>
+        <sshKeyData>ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAlw8d7dOtKtTN/DmZ9TlT9UR3fh0FCLcqtM4KVoGmaI7k900l6RKPjyNfXdhlFcYMfGuVkwLawG4hb6O1238ZAFsOQGTu1JOfEsFTWmG3E51P6bZkHzYk/fdzVsdREFj78LdZvM9+5/fT1l3DJH4oQXqra1RUsvhdl0PvplfSOjy2RVXUiyT/KE39gJArNfRBwYHFvCsZNeviuNbVr4lZkEqVGsO3ohw2Z69WAJHgpWGFyzH7JfkK4GnBuW4V/1Ih8mtnSZ35QjDZR6gBOKQWEInuKv4IJu1+vwwUzFaXOwRcawElGcwN6REDR3r0PHU15c1WpxiZWTFzd6sf63FVAQ== rsa-key-20160422</sshKeyData>
+        <environment>AzureCloud</environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_004</TestID>
+    </test>
+
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
 			<testName>ICA-TERASORT-BENCHMARK-TEST</testName>
@@ -6000,6 +6048,16 @@
 			<cycleName>LVM-SHRINK</cycleName>
 			<test>
 				<Name>ICA-LVM-SHRINK-FUNCTIONAL-TEST</Name>
+			</test>
+		</Cycle>
+
+		<Cycle>
+			<cycleName>BOSH-CF</cycleName>
+			<test>
+				<Name>Template-bosh-cf-deployment</Name>
+			</test>
+			<test>
+				<Name>Template-bosh-cf-lifecycle-test</Name>
 			</test>
 		</Cycle>
 
