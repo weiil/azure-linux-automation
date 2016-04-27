@@ -98,7 +98,7 @@ export BOSH_AZURE_VNET_NAME='boshvnet-crp'
 export BOSH_AZURE_SUBNET_NAME='Bosh'
 export BOSH_AZURE_SSH_PUBLIC_KEY='$sshpublickey'
 export BOSH_AZURE_DEFAULT_SECURITY_GROUP='nsg-bosh'
-export BOSH_AZURE_ENVIRONMENT='AzureChinaCloud'
+export BOSH_AZURE_ENVIRONMENT='AzureCloud'
 
 azure login --service-principal -u `${BOSH_AZURE_CLIENT_ID} -p `${BOSH_AZURE_CLIENT_SECRET} --tenant `${BOSH_AZURE_TENANT_ID}
 azure config mode arm
