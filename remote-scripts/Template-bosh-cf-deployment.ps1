@@ -62,14 +62,18 @@ try
     # ssh to devbox and deploy multi-vms cf
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "$command"
     $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"
+    $out | Out-File .\deploy_cloudfoundry.log -Encoding utf8
+
 
     if ($out -match "multi_vms_cf_deploy_ok")
     {
         $testResult_deploy_multi_vms_cf = "PASS"
+        LogMsg "deploy multi vms cf successfully"
     }
     else
     {
         $testResult_deploy_multi_vms_cf = "Failed"
+        LogMsg "deploy multi vms cf failed, please ssh to devbox and check details from deploy_cloudfoundry.log"
     }
 
     if ($testResult_deploy_bosh -eq "PASS" -and $testResult_deploy_multi_vms_cf -eq "PASS")

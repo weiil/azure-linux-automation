@@ -140,10 +140,12 @@ bundle exec rspec spec/integration | tee execution.log
     if ($out -match "failure")
     {
         $testResult_life_cycle_test = "PASS"
+        LogMsg "life cycle test successfully"
     }
     else
     {
         $testResult_life_cycle_test = "Failed"
+        LogMsg "life cycle test failed, please ssh to devbox check details from lifecycletest.log"
     }
 
     if ($testResult_deploy -eq "PASS" -and $testResult_life_cycle_test -eq "PASS")
