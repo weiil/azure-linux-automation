@@ -41,8 +41,7 @@ try
     }
 
 
-    #$isDeployed = CreateAllRGDeploymentsWithTempParameters -templateName $templateName -location $location -TemplateFile ..\azure-quickstart-templates\bosh-setup\azuredeploy.json  -TemplateParameterFile .\azuredeploy.parameters.json
-    $isDeployed = @($True, "ICA-RG-Template-bosh-cf-lifecycle-test-4-29-11-51-2")
+    $isDeployed = CreateAllRGDeploymentsWithTempParameters -templateName $templateName -location $location -TemplateFile ..\azure-quickstart-templates\bosh-setup\azuredeploy.json  -TemplateParameterFile .\azuredeploy.parameters.json
 
     if ($isDeployed[0] -eq $True)
     {
