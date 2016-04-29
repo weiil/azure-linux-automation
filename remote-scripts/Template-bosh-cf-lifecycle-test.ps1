@@ -41,7 +41,8 @@ try
     }
 
 
-    $isDeployed = CreateAllRGDeploymentsWithTempParameters -templateName $templateName -location $location -TemplateFile ..\azure-quickstart-templates\bosh-setup\azuredeploy.json  -TemplateParameterFile .\azuredeploy.parameters.json
+    #$isDeployed = CreateAllRGDeploymentsWithTempParameters -templateName $templateName -location $location -TemplateFile ..\azure-quickstart-templates\bosh-setup\azuredeploy.json  -TemplateParameterFile .\azuredeploy.parameters.json
+    $isDeployed = @($True, "ICA-RG-Template-bosh-cf-lifecycle-test-4-29-11-51-2")
 
     if ($isDeployed[0] -eq $True)
     {
@@ -61,28 +62,21 @@ try
     $clientid = $jsonfile.parameters.clientID.value
     $clientsecret = $jsonfile.parameters.clientSecret.value
     $sshpublickey = $jsonfile.parameters.sshKeyData.value
+    $azureenv = $jsonfile.parameters.environment.value
     $dep_ssh_info = $(Get-AzureResourceGroupDeployment -ResourceGroupName $isDeployed[1]).outputs['sshDevBox'].Value.Split(' ')[1]
     $port = 22
     $sshKey = "cf_devbox_privatekey.ppk"
-    
-    
-    try
-    {
-        # prepare test
-        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install git -y"
-        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "git clone https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release.git"
-        # install npm
-        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install npm -y"
-        # install azure-cli
-        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo npm install azure-cli -g"
-        # create a soft link for nodejs
-        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo ln -s /usr/bin/nodejs /usr/local/bin/node"
-    }
-    catch 
-    {
-        $ErrorMessage =  $_.Exception.Message
-        Write-Host "$ErrorMessage"
-    }
+
+    $prepare = @"
+#!/usr/bin/env bash
+sudo apt-get install -y git
+git clone https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release.git
+sudo apt-get install -y npm
+sudo npm install azure-cli -g
+sudo ln -s /usr/bin/nodejs /usr/local/bin/node
+curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -
+sudo apt-get install -y nodejs
+"@
    
     # generate the life cycle test script
     $src = @"
@@ -98,9 +92,19 @@ export BOSH_AZURE_VNET_NAME='boshvnet-crp'
 export BOSH_AZURE_SUBNET_NAME='Bosh'
 export BOSH_AZURE_SSH_PUBLIC_KEY='$sshpublickey'
 export BOSH_AZURE_DEFAULT_SECURITY_GROUP='nsg-bosh'
-export BOSH_AZURE_ENVIRONMENT='AzureCloud'
+export BOSH_AZURE_ENVIRONMENT='$azureenv'
 
-azure login --service-principal -u `${BOSH_AZURE_CLIENT_ID} -p `${BOSH_AZURE_CLIENT_SECRET} --tenant `${BOSH_AZURE_TENANT_ID}
+if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
+    export STEMCELL_DOWNLOAD_URL='https://cloudfoundry.blob.core.chinacloudapi.cn/stemcells/bosh-stemcell-3169-azure-hyperv-ubuntu-trusty-go_agent.tgz'
+    echo ${STEMCELL_DOWNLOAD_URL}
+fi
+
+if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureCloud' ]; then
+    export STEMCELL_DOWNLOAD_URL='https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-trusty-go_agent?v=3169'
+    echo ${STEMCELL_DOWNLOAD_URL}
+fi
+
+azure login --service-principal -u `${BOSH_AZURE_CLIENT_ID} -p `${BOSH_AZURE_CLIENT_SECRET} --tenant `${BOSH_AZURE_TENANT_ID} -e `${BOSH_AZURE_ENVIRONMENT}
 azure config mode arm
 AZURE_STORAGE_ACCESS_KEY=`$(azure storage account keys list `${BOSH_AZURE_STORAGE_ACCOUNT_NAME} -g `${BOSH_AZURE_RESOURCE_GROUP_NAME} --json | jq '.key1' -r)
 
@@ -111,7 +115,7 @@ export AZURE_STORAGE_ACCESS_KEY
 azure storage blob show stemcell `${BOSH_AZURE_STEMCELL_ID}.vhd
 if [ `$? -eq 1 ]; then
     echo 'download stemcell'
-    wget -q -O `${PWD}/stemcell.tgz https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-trusty-go_agent?v=3169
+    wget -q -O `${PWD}/stemcell.tgz `${STEMCELL_DOWNLOAD_URL}
     echo 'upload stemcell to storage'
     sudo tar -xf `${PWD}/stemcell.tgz -C /mnt/
     sudo tar -xf /mnt/image -C /mnt/
@@ -127,13 +131,17 @@ bundle exec rspec spec/integration | tee execution.log
 "@
 
     $src | Out-File .\run-lifecycletest.sh -Encoding utf8
+    $prepare | Out-File .\prepare-lifecycletest.sh -Encoding utf8
     .\tools\dos2unix.exe -q .\run-lifecycletest.sh
+    .\tools\dos2unix.exe -q .\prepare-lifecycletest.sh
     
     # uploading script to devbox
     echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\run-lifecycletest.sh ${dep_ssh_info}:
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\prepare-lifecycletest.sh ${dep_ssh_info}:
 
     # kickoff test
-    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x run-lifecycletest.sh"
+    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x *.sh"
+    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./prepare-lifecycletest.sh &> preparetest.log"
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./run-lifecycletest.sh &> lifecycletest.log"
     $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "cat lifecycletest.log"
 

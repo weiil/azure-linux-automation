@@ -4965,10 +4965,10 @@
       <files></files>
       <setupType></setupType>
       <parameters>
-        <vmName>devbox</vmName>
-        <adminUsername>azureuser</adminUsername>
-        <sshKeyData>ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAlw8d7dOtKtTN/DmZ9TlT9UR3fh0FCLcqtM4KVoGmaI7k900l6RKPjyNfXdhlFcYMfGuVkwLawG4hb6O1238ZAFsOQGTu1JOfEsFTWmG3E51P6bZkHzYk/fdzVsdREFj78LdZvM9+5/fT1l3DJH4oQXqra1RUsvhdl0PvplfSOjy2RVXUiyT/KE39gJArNfRBwYHFvCsZNeviuNbVr4lZkEqVGsO3ohw2Z69WAJHgpWGFyzH7JfkK4GnBuW4V/1Ih8mtnSZ35QjDZR6gBOKQWEInuKv4IJu1+vwwUzFaXOwRcawElGcwN6REDR3r0PHU15c1WpxiZWTFzd6sf63FVAQ== rsa-key-20160422</sshKeyData>
-        <environment>AzureCloud</environment>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
         <tenantID></tenantID>
         <clientID></clientID>
         <clientSecret></clientSecret>
@@ -4989,10 +4989,10 @@
       <files></files>
       <setupType></setupType>
       <parameters>
-        <vmName>devbox</vmName>
-        <adminUsername>azureuser</adminUsername>
-        <sshKeyData>ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAlw8d7dOtKtTN/DmZ9TlT9UR3fh0FCLcqtM4KVoGmaI7k900l6RKPjyNfXdhlFcYMfGuVkwLawG4hb6O1238ZAFsOQGTu1JOfEsFTWmG3E51P6bZkHzYk/fdzVsdREFj78LdZvM9+5/fT1l3DJH4oQXqra1RUsvhdl0PvplfSOjy2RVXUiyT/KE39gJArNfRBwYHFvCsZNeviuNbVr4lZkEqVGsO3ohw2Z69WAJHgpWGFyzH7JfkK4GnBuW4V/1Ih8mtnSZ35QjDZR6gBOKQWEInuKv4IJu1+vwwUzFaXOwRcawElGcwN6REDR3r0PHU15c1WpxiZWTFzd6sf63FVAQ== rsa-key-20160422</sshKeyData>
-        <environment>AzureCloud</environment>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
         <tenantID></tenantID>
         <clientID></clientID>
         <clientSecret></clientSecret>
