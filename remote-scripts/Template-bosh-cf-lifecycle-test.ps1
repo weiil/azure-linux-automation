@@ -106,7 +106,7 @@ fi
 
 azure login --service-principal -u `${BOSH_AZURE_CLIENT_ID} -p `${BOSH_AZURE_CLIENT_SECRET} --tenant `${BOSH_AZURE_TENANT_ID} -e `${BOSH_AZURE_ENVIRONMENT}
 azure config mode arm
-AZURE_STORAGE_ACCESS_KEY=`$(azure storage account keys list `${BOSH_AZURE_STORAGE_ACCOUNT_NAME} -g `${BOSH_AZURE_RESOURCE_GROUP_NAME} --json | jq '.key1' -r)
+AZURE_STORAGE_ACCESS_KEY=`$(azure storage account keys list `${BOSH_AZURE_STORAGE_ACCOUNT_NAME} -g `${BOSH_AZURE_RESOURCE_GROUP_NAME} --json | jq '.[0].value' -r)
 
 export BOSH_AZURE_STEMCELL_ID="bosh-stemcell-00000000-0000-0000-0000-0AZURECPICI0"
 export AZURE_STORAGE_ACCOUNT=`${BOSH_AZURE_STORAGE_ACCOUNT_NAME}
