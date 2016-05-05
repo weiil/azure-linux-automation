@@ -55,7 +55,7 @@ try
 
     # connect to the devbox
     $subscription_id = $AzureSetup.SubscriptionID
-    $storage = $($(Get-AzureRmResourceGroup -Name $isDeployed[1]).Resources | Where-Object {$_.ResourceType -eq 'Microsoft.Storage/storageAccounts'}).Name
+    $storage = $(Get-AzureRmStorageAccount -ResourceGroupName $isDeployed[1]).StorageAccountName
     $rgname = $isDeployed[1]
     $tenantid = $jsonfile.parameters.tenantID.value
     $clientid = $jsonfile.parameters.clientID.value
