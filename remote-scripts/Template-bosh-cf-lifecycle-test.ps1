@@ -63,6 +63,7 @@ try
     $sshpublickey = $jsonfile.parameters.sshKeyData.value
     $azureenv = $jsonfile.parameters.environment.value
     $dep_ssh_info = $(Get-AzureResourceGroupDeployment -ResourceGroupName $isDeployed[1]).outputs['sshDevBox'].Value.Split(' ')[1]
+    LogMsg $dep_ssh_info
     $port = 22
     $sshKey = "cf_devbox_privatekey.ppk"
 

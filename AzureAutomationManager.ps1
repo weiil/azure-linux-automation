@@ -109,7 +109,7 @@ try
 
     if ($UseAzureResourceManager)
     {
-		Switch-AzureMode -Name AzureResourceManager
+		#Switch-AzureMode -Name AzureResourceManager
 		Set-Variable -Name UseAzureResourceManager -Value $true -Scope Global
 		$selectSubscription = Select-AzureSubscription -SubscriptionId $AzureSetup.SubscriptionID
 		$selectedSubscription = Get-AzureSubscription | where { $_.IsCurrent -eq "True" }
@@ -121,7 +121,7 @@ try
     }
     else
     {
-        Switch-AzureMode -Name AzureServiceManagement
+        #Switch-AzureMode -Name AzureServiceManagement
         Set-Variable -Name UseAzureResourceManager -Value $false -Scope Global
         LogMsg "Setting Azure Subscription ..."
 		$out = SetSubscription -subscriptionID $AzureSetup.SubscriptionID -subscriptionName $AzureSetup.SubscriptionName -certificateThumbprint $AzureSetup.CertificateThumbprint -managementEndpoint $AzureSetup.ManagementEndpoint -storageAccount $AzureSetup.StorageAccount -environment $AzureSetup.Environment
