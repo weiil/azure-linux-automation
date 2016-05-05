@@ -55,14 +55,14 @@ try
 
     # connect to the devbox
     $subscription_id = $AzureSetup.SubscriptionID
-    $storage = $($(Get-AzureResourceGroup -Name $isDeployed[1]).Resources | Where-Object {$_.ResourceType -eq 'Microsoft.Storage/storageAccounts'}).Name
+    $storage = $($(Get-AzureRmResourceGroup -Name $isDeployed[1]).Resources | Where-Object {$_.ResourceType -eq 'Microsoft.Storage/storageAccounts'}).Name
     $rgname = $isDeployed[1]
     $tenantid = $jsonfile.parameters.tenantID.value
     $clientid = $jsonfile.parameters.clientID.value
     $clientsecret = $jsonfile.parameters.clientSecret.value
     $sshpublickey = $jsonfile.parameters.sshKeyData.value
     $azureenv = $jsonfile.parameters.environment.value
-    $dep_ssh_info = $(Get-AzureResourceGroupDeployment -ResourceGroupName $isDeployed[1]).outputs['sshDevBox'].Value.Split(' ')[1]
+    $dep_ssh_info = $(Get-AzureRmResourceGroupDeployment -ResourceGroupName $isDeployed[1]).outputs['sshDevBox'].Value.Split(' ')[1]
     LogMsg $dep_ssh_info
     $port = 22
     $sshKey = "cf_devbox_privatekey.ppk"
