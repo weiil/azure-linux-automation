@@ -127,7 +127,7 @@ cd bosh-azure-cpi-release/src/bosh_azure_cpi
 sudo gem install bundler --no-ri --no-rdoc
 sudo ln -s /usr/local/bin/bundle /usr/bin/bundle
 bundle install
-bundle exec rspec spec/integration | tee execution.log
+bundle exec rspec spec/integration
 "@
 
     $src | Out-File .\run-lifecycletest.sh -Encoding utf8
@@ -145,15 +145,15 @@ bundle exec rspec spec/integration | tee execution.log
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./run-lifecycletest.sh &> lifecycletest.log"
     $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "cat lifecycletest.log"
 
-    if ($out -match "failure")
-    {
-        $testResult_life_cycle_test = "Failed"
-        LogMsg "life cycle test failed, please ssh to devbox check details from lifecycletest.log"
-    }
-    else
+    if ($out -match "0 failure")
     {
         $testResult_life_cycle_test = "PASS"
         LogMsg "life cycle test successfully"
+    }
+    else
+    {
+        $testResult_life_cycle_test = "Failed"
+        LogMsg "life cycle test failed, please ssh to devbox check details from lifecycletest.log"
     }
 
     if ($testResult_deploy -eq "PASS" -and $testResult_life_cycle_test -eq "PASS")
