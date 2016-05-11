@@ -69,10 +69,24 @@ try
 
     $prepare = @"
 #!/usr/bin/env bash
+set -e
+sudo apt-get update
 sudo apt-get install -y git
-git clone https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release.git
+retry=1
+while [ `${retry} -lt 10 ]; do
+    sudo rm -rf bosh-azure-cpi-release/
+    echo 'clone cpi repo retry#'`${retry}
+    sudo git clone https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release.git
+    if [ `$? -eq 0 ]; then
+        echo 'clone cpi repo successfully.'
+        break
+    else
+        let retry=retry+1
+    fi
+done
+
 sudo apt-get install -y npm
-sudo npm install azure-cli -g
+sudo npm install azure-cli@0.9.18 -g
 sudo ln -s /usr/bin/nodejs /usr/local/bin/node
 curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -
 sudo apt-get install -y nodejs
@@ -81,7 +95,7 @@ sudo apt-get install -y nodejs
     # generate the life cycle test script
     $src = @"
 #!/usr/bin/env bash
-
+set -e
 export BOSH_AZURE_SUBSCRIPTION_ID=$subscription_id
 export BOSH_AZURE_STORAGE_ACCOUNT_NAME=$storage
 export BOSH_AZURE_RESOURCE_GROUP_NAME=$rgname
