@@ -95,7 +95,7 @@ sudo apt-get install -y nodejs
     # generate the life cycle test script
     $src = @"
 #!/usr/bin/env bash
-set -e
+
 export BOSH_AZURE_SUBSCRIPTION_ID=$subscription_id
 export BOSH_AZURE_STORAGE_ACCOUNT_NAME=$storage
 export BOSH_AZURE_RESOURCE_GROUP_NAME=$rgname
@@ -120,7 +120,7 @@ fi
 
 azure login --service-principal -u `${BOSH_AZURE_CLIENT_ID} -p `${BOSH_AZURE_CLIENT_SECRET} --tenant `${BOSH_AZURE_TENANT_ID} -e `${BOSH_AZURE_ENVIRONMENT}
 azure config mode arm
-AZURE_STORAGE_ACCESS_KEY=`$(azure storage account keys list `${BOSH_AZURE_STORAGE_ACCOUNT_NAME} -g `${BOSH_AZURE_RESOURCE_GROUP_NAME} --json | jq '.[0].value' -r)
+AZURE_STORAGE_ACCESS_KEY=`$(azure storage account keys list `${BOSH_AZURE_STORAGE_ACCOUNT_NAME} -g `${BOSH_AZURE_RESOURCE_GROUP_NAME} --json | jq '.key1' -r)
 
 export BOSH_AZURE_STEMCELL_ID="bosh-stemcell-00000000-0000-0000-0000-0AZURECPICI0"
 export AZURE_STORAGE_ACCOUNT=`${BOSH_AZURE_STORAGE_ACCOUNT_NAME}
@@ -138,9 +138,38 @@ fi
 
 cd bosh-azure-cpi-release/src/bosh_azure_cpi
 
-sudo gem install bundler --no-ri --no-rdoc
+if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
+  sudo gem sources --remove https://rubygems.org/
+  sudo gem sources --add https://ruby.taobao.org/
+  sudo gem sources --add https://gems.ruby-china.org/
+fi
+
+retry=1
+while [ `${retry} -lt 20 ]; do
+    echo 'instal bundler retry#'`${retry}
+    sudo gem install bundler --no-ri --no-rdoc
+    if [ `$? -eq 0 ]; then
+        echo 'install bundler successfully.'
+        break
+    else
+        let retry=retry+1
+    fi
+done
+
 sudo ln -s /usr/local/bin/bundle /usr/bin/bundle
-bundle install
+
+retry1=1
+while [ `${retry1} -lt 20 ]; do
+    echo 'bundle install retry#'`${retry1}
+    bundle install
+    if [ `$? -eq 0 ]; then
+        echo 'bundle install successfully.'
+        break
+    else
+        let retry1=retry1+1
+    fi
+done
+
 bundle exec rspec spec/integration
 "@
 
