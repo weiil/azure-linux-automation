@@ -85,11 +85,27 @@ while [ `${retry} -lt 10 ]; do
     fi
 done
 
-sudo apt-get install -y npm
-sudo npm install azure-cli@0.9.18 -g
-sudo ln -s /usr/bin/nodejs /usr/local/bin/node
-curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -
-sudo apt-get install -y nodejs
+function retryop()
+{
+    retry=1
+    while [ `${retry} -lt 10 ]; do
+        echo 'op:'`$1
+        echo 'retry#'`${retry}
+        eval `$1
+        if [ `$? -eq 0 ]; then
+            echo 'successfully.'
+            break
+        else
+            let retry=retry+1
+        fi
+    done
+}
+
+retryop 'sudo apt-get install -y npm'
+retryop 'sudo npm install azure-cli@0.9.18 -g'
+retryop 'sudo ln -s /usr/bin/nodejs /usr/local/bin/node'
+retryop 'curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -'
+retryop 'sudo apt-get install -y nodejs'
 "@
    
     # generate the life cycle test script
@@ -136,6 +152,22 @@ if [ `$? -eq 1 ]; then
     azure storage blob upload -q --blobtype PAGE /mnt/root.vhd stemcell `${BOSH_AZURE_STEMCELL_ID}.vhd
 fi
 
+function retryop()
+{
+    retry=1
+    while [ `${retry} -lt 10 ]; do
+        echo 'op:'`$1
+        echo 'retry#'`${retry}
+        eval `$1
+        if [ `$? -eq 0 ]; then
+            echo 'successfully.'
+            break
+        else
+            let retry=retry+1
+        fi
+    done
+}
+
 cd bosh-azure-cpi-release/src/bosh_azure_cpi
 
 if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
@@ -144,32 +176,9 @@ if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
   sudo gem sources --add https://gems.ruby-china.org/
 fi
 
-retry=1
-while [ `${retry} -lt 20 ]; do
-    echo 'instal bundler retry#'`${retry}
-    sudo gem install bundler --no-ri --no-rdoc
-    if [ `$? -eq 0 ]; then
-        echo 'install bundler successfully.'
-        break
-    else
-        let retry=retry+1
-    fi
-done
-
+retryop 'sudo gem install bundler --no-ri --no-rdoc'
 sudo ln -s /usr/local/bin/bundle /usr/bin/bundle
-
-retry1=1
-while [ `${retry1} -lt 20 ]; do
-    echo 'bundle install retry#'`${retry1}
-    bundle install
-    if [ `$? -eq 0 ]; then
-        echo 'bundle install successfully.'
-        break
-    else
-        let retry1=retry1+1
-    fi
-done
-
+retryop 'bundle install'
 bundle exec rspec spec/integration
 "@
 
