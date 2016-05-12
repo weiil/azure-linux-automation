@@ -101,11 +101,10 @@ function retryop()
     done
 }
 
-retryop 'sudo apt-get install -y npm'
-retryop 'sudo npm install azure-cli@0.9.18 -g'
-retryop 'sudo ln -s /usr/bin/nodejs /usr/local/bin/node'
+retryop 'sudo apt-get update'
 retryop 'curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -'
 retryop 'sudo apt-get install -y nodejs'
+retryop 'sudo npm install azure-cli@0.9.18 -g'
 "@
    
     # generate the life cycle test script
