@@ -120,7 +120,7 @@ else
 fi
 
 node_ver=``node -v``
-node_ver_major=``echo $node_ver | cut -b1-2``
+node_ver_major=``echo `$node_ver | cut -b1-2``
 azurecli_ver=``azure -v``
 echo `$node_ver
 echo `$node_ver_major
@@ -207,7 +207,7 @@ function retryop()
 
 cd bosh-azure-cpi-release/src/bosh_azure_cpi
 
-if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
+if [ `${BOSH_AZURE_ENVIRONMENT} = 'AzureChinaCloud' ]; then
   sudo gem sources --remove https://rubygems.org/
   sudo gem sources --add https://ruby.taobao.org/
   sudo gem sources --add https://gems.ruby-china.org/
