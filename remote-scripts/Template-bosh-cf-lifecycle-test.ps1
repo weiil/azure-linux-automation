@@ -69,11 +69,11 @@ try
 
     $prepare = @"
 #!/usr/bin/env bash
-set -e
+
 sudo apt-get update
 sudo apt-get install -y git
 retry=1
-while [ `${retry} -lt 10 ]; do
+while [ `${retry} -lt 20 ]; do
     sudo rm -rf bosh-azure-cpi-release/
     echo 'clone cpi repo retry#'`${retry}
     sudo git clone https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release.git
@@ -88,7 +88,7 @@ done
 function retryop()
 {
     retry=1
-    while [ `${retry} -lt 10 ]; do
+    while [ `${retry} -lt 20 ]; do
         echo 'op:'`$1
         echo 'retry#'`${retry}
         eval `$1
@@ -101,10 +101,48 @@ function retryop()
     done
 }
 
-retryop 'sudo apt-get update'
-retryop 'curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -'
-retryop 'sudo apt-get install -y nodejs'
-retryop 'sudo npm install azure-cli@0.9.18 -g'
+which node
+if [ `$? -eq 0 ]; then
+    echo 'nodejs installed.'
+else
+    echo 'nodejs seems not installed failed, will be installed.'
+    retryop 'sudo apt-get update'
+    retryop 'curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -'
+    retryop 'sudo apt-get install -y nodejs'
+fi
+
+which azure
+if [ `$? -eq 0 ]; then
+    echo 'azure cli installed.'
+else
+    echo 'azure cli seems not installed, will be installed.'
+    retryop 'sudo npm --registry https://registry.npm.taobao.org install azure-cli@0.9.18 -g'
+fi
+
+node_ver=``node -v``
+node_ver_major=``echo $node_ver | cut -b1-2``
+azurecli_ver=``azure -v``
+echo `$node_ver
+echo `$node_ver_major
+echo `$azurecli_ver
+
+if [ `$node_ver_major = 'v5' ]; then
+    echo 'node version check pass.'
+else
+    echo 'node version check failed. will remove and install again.'
+    sudo apt-get remove nodejs -y
+    retryop 'curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -'
+    retryop 'sudo apt-get install -y nodejs'
+fi
+
+if [ `$azurecli_ver = '0.9.18' ]; then
+    echo 'azure cli version check pass.'
+else
+    echo 'azure cli version check failed. will remove and install again.'
+    sudo npm remove azure-cli -g
+    retryop 'sudo npm --registry https://registry.npm.taobao.org install azure-cli@0.9.18 -g'
+fi
+
 "@
    
     # generate the life cycle test script
@@ -154,7 +192,7 @@ fi
 function retryop()
 {
     retry=1
-    while [ `${retry} -lt 10 ]; do
+    while [ `${retry} -lt 20 ]; do
         echo 'op:'`$1
         echo 'retry#'`${retry}
         eval `$1
