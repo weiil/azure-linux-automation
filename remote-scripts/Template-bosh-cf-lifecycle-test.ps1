@@ -208,10 +208,15 @@ function retryop()
 cd bosh-azure-cpi-release/src/bosh_azure_cpi
 
 if [ `${BOSH_AZURE_ENVIRONMENT} = 'AzureChinaCloud' ]; then
+  echo 'configure gem sources for mooncake.'
   sudo gem sources --remove https://rubygems.org/
   sudo gem sources --add https://ruby.taobao.org/
   sudo gem sources --add https://gems.ruby-china.org/
 fi
+
+sudo gem sources -l
+sudo gem sources -c
+sudo gem sources -u
 
 retryop 'sudo gem install bundler --no-ri --no-rdoc'
 sudo ln -s /usr/local/bin/bundle /usr/bin/bundle
