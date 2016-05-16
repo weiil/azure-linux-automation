@@ -88,7 +88,7 @@ done
 function retryop()
 {
     retry=1
-    while [ `${retry} -lt 20 ]; do
+    while [ `${retry} -lt 60 ]; do
         echo 'op:'`$1
         echo 'retry#'`${retry}
         eval `$1
@@ -192,7 +192,7 @@ fi
 function retryop()
 {
     retry=1
-    while [ `${retry} -lt 20 ]; do
+    while [ `${retry} -lt 200 ]; do
         echo 'op:'`$1
         echo 'retry#'`${retry}
         eval `$1
