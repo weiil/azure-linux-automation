@@ -4973,6 +4973,10 @@
         <clientID></clientID>
         <clientSecret></clientSecret>
         <autoDeployBosh>enabled</autoDeployBosh>
+        <cpiUrl></cpiUrl>
+        <cpiSha1></cpiSha1>
+        <boshInstanceType></boshInstanceType>
+        <compilationInstanceType></compilationInstanceType>
       </parameters>
       <TestType>
       </TestType>
