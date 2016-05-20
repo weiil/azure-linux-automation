@@ -5006,6 +5006,34 @@
       <TestID>AzureTemplate_004</TestID>
     </test>
 
+    <test>
+      <testName>Template-bosh-cf-perf</testName>
+      <testScript></testScript>
+      <testScriptPs1>Template-bosh-cf-perf.ps1</testScriptPs1>
+      <files></files>
+      <setupType></setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+        <cpiUrl></cpiUrl>
+        <cpiSha1></cpiSha1>
+        <boshInstanceType></boshInstanceType>
+        <compilationInstanceType></compilationInstanceType>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_005</TestID>
+    </test>
+
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
 			<testName>ICA-TERASORT-BENCHMARK-TEST</testName>
@@ -6058,6 +6086,9 @@
 			</test>
 			<test>
 				<Name>Template-bosh-cf-lifecycle-test</Name>
+			</test>
+			<test>
+				<Name>Template-bosh-cf-perf</Name>
 			</test>
 		</Cycle>
 
