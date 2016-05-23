@@ -5,13 +5,14 @@ from sys import exit
 import os
 from pprint import pprint
 
-def updatebosh(fname, newfile):
+def updatebosh(fname, newfile, mode):
 	try:
 
 		cpi_url = os.environ['BOSH_AZURE_CPI_URL']
 		cpi_sha1 = os.environ['BOSH_AZURE_CPI_SHA1']
-		bosh_instance_type = os.environ['BOSH_AZURE_INSTANCE_TYPE']
-		bosh_vm_storage_account = os.environ['BOSH_AZURE_VM_STORAGE_ACCOUNT']
+		if mode == 'performance':
+			bosh_instance_type = os.environ['BOSH_AZURE_INSTANCE_TYPE']
+			bosh_vm_storage_account = os.environ['BOSH_AZURE_VM_STORAGE_ACCOUNT']
 		stemcell_url = os.environ['BOSH_AZURE_STEMCELL_URL']
 		stemcell_sha1 = os.environ['BOSH_AZURE_STEMCELL_SHA1']
 
@@ -42,22 +43,23 @@ def updatebosh(fname, newfile):
 					raise ValueError
 
 			# update bosh vm
-			if 'instance_type' in i:
-				node_index = l.index(i)
-				print('updating bosh')
-				print('find instance_type node for bosh, changing...')
-				l[node_index] = l[node_index].replace(l[node_index].split()[-1],bosh_instance_type)
-				print('done')
-				# insert storage account name node
-				print('inserting storage_account_name node for bosh')
-				char_start_index = l[node_index].index('instance_type')
-				space_str = l[node_index][:char_start_index]
-				storage = space_str + 'storage_account_name: ' + bosh_vm_storage_account + '\n'
-				l.insert(node_index + 1, storage)
-				print('done')
+			if mode == 'performance':
+				if 'instance_type' in i:
+					node_index = l.index(i)
+					print('updating bosh')
+					print('find instance_type node for bosh, changing...')
+					l[node_index] = l[node_index].replace(l[node_index].split()[-1],bosh_instance_type)
+					print('done')
+					# insert storage account name node
+					print('inserting storage_account_name node for bosh')
+					char_start_index = l[node_index].index('instance_type')
+					space_str = l[node_index][:char_start_index]
+					storage = space_str + 'storage_account_name: ' + bosh_vm_storage_account + '\n'
+					l.insert(node_index + 1, storage)
+					print('done')
 
-			else: 
-				pass
+				else: 
+					pass
 
 		if stemcell_url != '' and stemcell_sha1 != '':
 			print('updating stemcell for bosh')
@@ -88,11 +90,11 @@ def updatebosh(fname, newfile):
 		print('update yaml config for bosh successfully')
 		return True
 
-def updatecf(fname, newfile):
+def updatecf(fname, newfile, mode):
 	try:
-		
-		compile_instance_type = os.environ['BOSH_AZURE_COMPILE_INSTANCE_TYPE']
-		compile_vm_storage_account = os.environ['BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT']
+		if mode == 'performance':
+			compile_instance_type = os.environ['BOSH_AZURE_COMPILE_INSTANCE_TYPE']
+			compile_vm_storage_account = os.environ['BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT']
 		stemcell_url = os.environ['BOSH_AZURE_STEMCELL_URL']
 		stemcell_sha1 = os.environ['BOSH_AZURE_STEMCELL_SHA1']
 
@@ -101,34 +103,34 @@ def updatecf(fname, newfile):
 		with open(fname) as f:
 			l = f.readlines()
 
-		print('updating compile')
-		# update compile vm size
-		for i in l:
-			if 'compilation' in i:
-				
-				node_index = l.index(i)
-				for ii in l[node_index:]:
-					if 'instance_type' in ii:
-						node_index = l.index(ii, node_index)
-						print('find instance_type node for compile, changing...')
-						break
-				l[node_index] = l[node_index].replace(l[node_index].split()[-1],compile_instance_type)
-				print('done')
-				# get the space length for print
-				print('inserting storage_account_name node for compile')
-				char_start_index = l[node_index].index('instance_type')
-				space_str = l[node_index][:char_start_index]
-				storage = space_str + 'storage_account_name: ' + compile_vm_storage_account + '\n'
-				# insert the storage acout name node
-				l.insert(node_index + 1, storage)
-				print('done')
-				break
+		if mode == 'performance':
+			print('updating compile')
+			# update compile vm size
+			for i in l:
+				if 'compilation' in i:
+					node_index = l.index(i)
+					for ii in l[node_index:]:
+						if 'instance_type' in ii:
+							node_index = l.index(ii, node_index)
+							print('find instance_type node for compile, changing...')
+							break
+					l[node_index] = l[node_index].replace(l[node_index].split()[-1],compile_instance_type)
+					print('done')
+					# get the space length for print
+					print('inserting storage_account_name node for compile')
+					char_start_index = l[node_index].index('instance_type')
+					space_str = l[node_index][:char_start_index]
+					storage = space_str + 'storage_account_name: ' + compile_vm_storage_account + '\n'
+					# insert the storage acout name node
+					l.insert(node_index + 1, storage)
+					print('done')
+					break
 
-		with open(newfile,'w') as f:
-			f.writelines(l)
-		#pprint(l)
+			with open(newfile,'w') as f:
+				f.writelines(l)
+			#pprint(l)
 
-		renameyaml(fname,newfile)
+			renameyaml(fname,newfile)
 
 		if stemcell_url != '' and stemcell_sha1 != '':
 			print('updating stemcell for cf deployment')
@@ -167,12 +169,18 @@ def renameyaml(fname, newfile):
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
-		sys.exit('please specify the yaml file path which want to update')
-	else:
+		sys.exit('please specify the yaml file path which want to update and the update test mode<deployment|performance>.')
+	if len(sys.argv) == 2:
+		sys.exit('please specify the update test mode<deployment|performance>.')
+	if len(sys.argv) == 3:
 		fpath = sys.argv[1]
+		mode = sys.argv[2]
 
 	if not os.path.exists(fpath):
 		sys.exit('{} is not exits'.format(fpath))
+
+	if mode != 'deployment' and mode != 'performance':
+		sys.exit('{} is not a recognized mode, "deployment" or "performance" is allowed.'.format(mode))
 
 	base_name = os.path.basename(fpath)
 	dir_name = os.path.dirname(fpath)
@@ -180,7 +188,7 @@ if __name__ == "__main__":
 	print('save updated file as {}'.format(new_file_path))
 
 	if base_name == 'bosh.yml':
-		updatebosh(fpath, new_file_path)
+		updatebosh(fpath, new_file_path, mode)
 	elif base_name == 'multiple-vm-cf.yml':
-		updatecf(fpath, new_file_path)
+		updatecf(fpath, new_file_path, mode)
 

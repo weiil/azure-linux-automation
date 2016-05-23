@@ -29,6 +29,15 @@ try
     $jsonfile.parameters.clientSecret.value = $parameters.clientSecret
     $jsonfile.parameters.autoDeployBosh.value = $parameters.autoDeployBosh
     
+    # if autoDeployBosh=enabled: automatic bosh deployment with default configs and ignore the stemcell specified 
+    # if autoDeployBosh=disabled: configure then execute deploy bosh cf deployments on devbox
+    if($parameters.autoDeployBosh -eq "disabled")
+    {
+        $BOSH_AZURE_CPI_URL = $parameters.cpiUrl
+        $BOSH_AZURE_CPI_SHA1 = $parameters.cpiSha1
+        $BOSH_AZURE_STEMCELL_URL = $parameters.stemcellUrl
+        $BOSH_AZURE_STEMCELL_SHA1 = $parameters.stemcellSha1
+    }
     # save template parameter file
     $jsonfile | ConvertTo-Json | Out-File .\azuredeploy.parameters.json
     if(Test-Path .\azuredeploy.parameters.json)
@@ -45,12 +54,15 @@ try
 
     if ($isDeployed[0] -eq $True)
     {
-
-        $testResult_deploy_bosh = "PASS"
+        if ($parameters.autoDeployBosh -eq "enabled")
+        {
+            $testResult_deploy_bosh = "PASS"
+        }
     }
     else
     {
         $testResult_deploy_bosh = "Failed"
+        throw 'deploy resouces with error, please check.'
     }
 
     # connect to the devbox then deploy multi-vms cf
@@ -60,11 +72,53 @@ try
     $sshKey = "cf_devbox_privatekey.ppk"
     $command = 'hostname'
     
+$pre = @"
+#!/usr/bin/env bash
+
+export BOSH_AZURE_CPI_URL='${BOSH_AZURE_CPI_URL}'
+export BOSH_AZURE_CPI_SHA1='${BOSH_AZURE_CPI_SHA1}'
+export BOSH_AZURE_STEMCELL_URL='${BOSH_AZURE_STEMCELL_URL}'
+export BOSH_AZURE_STEMCELL_SHA1='${BOSH_AZURE_STEMCELL_SHA1}'
+
+python bosh-cf-perf-yaml-handler.py bosh.yml deployment
+python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml deployment
+"@
+    
     # ssh to devbox and deploy multi-vms cf
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "$command"
-    $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"
-    $out | Out-File .\deploy_cloudfoundry.log -Encoding utf8
 
+    if($parameters.autoDeployBosh -eq "enabled")
+    {
+        $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"
+    }
+    if($parameters.autoDeployBosh -eq "disabled")
+    {
+        LogMsg "generate test scripts"
+        $pre | Out-File .\pre-action.sh -Encoding utf8
+        .\tools\dos2unix.exe -q .\pre-action.sh
+        LogMsg "upload test scripts"
+        echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\pre-action.sh ${dep_ssh_info}:
+        echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\remote-scripts\bosh-cf-perf-yaml-handler.py ${dep_ssh_info}:
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x *.sh"
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x *.py"
+        LogMsg "prepare test"
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./pre-action.sh"
+        $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_bosh.sh && echo bosh_deploy_ok || echo bosh_deploy_fail"
+        if ($out -match 'bosh_deploy_ok')
+        {
+            LogMsg "deploy bosh successfully then start to deploy multi-vms cf"
+            $testResult_deploy_bosh = "PASS"
+            $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"   
+        }
+        else
+        {
+            LogMsg "deploy bosh failed."
+            $testResult_deploy_bosh = "Failed"
+            throw 'deploy bosh failed, please check.'
+        }
+    }
+
+    $out | Out-File .\deploy_cloudfoundry.log -Encoding utf8
 
     if ($out -match "multi_vms_cf_deploy_ok")
     {
@@ -86,7 +140,6 @@ try
         $testResult = "Failed"
     }
 
-
     $testStatus = "TestCompleted"
     LogMsg "Test result : $testResult"
 
@@ -94,8 +147,6 @@ try
     {
         LogMsg "Test Completed"
     }
-
-
 }
 catch
 {

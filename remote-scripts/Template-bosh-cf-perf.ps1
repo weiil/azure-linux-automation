@@ -150,8 +150,8 @@ export BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT='${BOSH_AZURE_COMPILE_VM_STORAGE_AC
 export BOSH_AZURE_STEMCELL_URL='${BOSH_AZURE_STEMCELL_URL}'
 export BOSH_AZURE_STEMCELL_SHA1='${BOSH_AZURE_STEMCELL_SHA1}'
 
-python bosh-cf-perf-yaml-handler.py bosh.yml
-python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml
+python bosh-cf-perf-yaml-handler.py bosh.yml performance
+python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml performance
 "@
 
     $deploy = @"
