@@ -34,6 +34,8 @@ try
     $BOSH_AZURE_CPI_SHA1 = $parameters.cpiSha1
     $BOSH_AZURE_INSTANCE_TYPE = $parameters.boshInstanceType
     $BOSH_AZURE_COMPILE_INSTANCE_TYPE = $parameters.compilationInstanceType
+    $BOSH_AZURE_STEMCELL_URL = $parameters.stemcellUrl
+    $BOSH_AZURE_STEMCELL_SHA1 = $parameters.stemcellSha1
 
     $bosh_instance_require_premium = $False
     $compile_instance_require_premium = $False
@@ -145,6 +147,8 @@ export BOSH_AZURE_INSTANCE_TYPE='${BOSH_AZURE_INSTANCE_TYPE}'
 export BOSH_AZURE_VM_STORAGE_ACCOUNT='${BOSH_AZURE_VM_STORAGE_ACCOUNT}'
 export BOSH_AZURE_COMPILE_INSTANCE_TYPE='${BOSH_AZURE_COMPILE_INSTANCE_TYPE}'
 export BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT='${BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT}'
+export BOSH_AZURE_STEMCELL_URL='${BOSH_AZURE_STEMCELL_URL}'
+export BOSH_AZURE_STEMCELL_SHA1='${BOSH_AZURE_STEMCELL_SHA1}'
 
 python bosh-cf-perf-yaml-handler.py bosh.yml
 python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml

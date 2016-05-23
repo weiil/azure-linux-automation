@@ -4975,8 +4975,8 @@
         <autoDeployBosh>enabled</autoDeployBosh>
         <cpiUrl></cpiUrl>
         <cpiSha1></cpiSha1>
-        <boshInstanceType></boshInstanceType>
-        <compilationInstanceType></compilationInstanceType>
+        <stemcellUrl></stemcellUrl>
+        <stemcellSha1></stemcellSha1>
       </parameters>
       <TestType>
       </TestType>
@@ -5027,6 +5027,8 @@
         <autoDeployBosh>disabled</autoDeployBosh>
         <cpiUrl></cpiUrl>
         <cpiSha1></cpiSha1>
+        <stemcellUrl></stemcellUrl>
+        <stemcellSha1></stemcellSha1>
         <boshInstanceType></boshInstanceType>
         <compilationInstanceType></compilationInstanceType>
       </parameters>

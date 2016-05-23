@@ -12,6 +12,8 @@ def updatebosh(fname, newfile):
 		cpi_sha1 = os.environ['BOSH_AZURE_CPI_SHA1']
 		bosh_instance_type = os.environ['BOSH_AZURE_INSTANCE_TYPE']
 		bosh_vm_storage_account = os.environ['BOSH_AZURE_VM_STORAGE_ACCOUNT']
+		stemcell_url = os.environ['BOSH_AZURE_STEMCELL_URL']
+		stemcell_sha1 = os.environ['BOSH_AZURE_STEMCELL_SHA1']
 
 		with open(fname) as f:
 			l = f.readlines()
@@ -57,6 +59,17 @@ def updatebosh(fname, newfile):
 			else: 
 				pass
 
+		if stemcell_url != '' and stemcell_sha1 != '':
+			print('updating stemcell for bosh')
+			for i in l:
+				if 'url' in i and 'https' in i and 'stemcell' in i:
+					print('find stemcell node for bosh, changing...')
+					node_index = l.index(i)
+					l[node_index] = l[node_index].replace(l[node_index].split()[-1], stemcell_url)
+					l[node_index + 1] = l[node_index + 1].replace(l[node_index + 1].split()[-1], stemcell_sha1)
+					print('done')
+					break
+
 		with open(newfile, 'w') as f:
 			f.writelines(l)
 		#pprint(l)
@@ -80,6 +93,10 @@ def updatecf(fname, newfile):
 		
 		compile_instance_type = os.environ['BOSH_AZURE_COMPILE_INSTANCE_TYPE']
 		compile_vm_storage_account = os.environ['BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT']
+		stemcell_url = os.environ['BOSH_AZURE_STEMCELL_URL']
+		stemcell_sha1 = os.environ['BOSH_AZURE_STEMCELL_SHA1']
+
+		deploy_cf_sh_path = 'deploy_cloudfoundry.sh'
 
 		with open(fname) as f:
 			l = f.readlines()
@@ -112,6 +129,22 @@ def updatecf(fname, newfile):
 		#pprint(l)
 
 		renameyaml(fname,newfile)
+
+		if stemcell_url != '' and stemcell_sha1 != '':
+			print('updating stemcell for cf deployment')
+			ver = stemcell_url.split('v=')[1]
+			print('work with stemcell v{}'.format(ver))
+			with open(deploy_cf_sh_path, 'r') as f:
+				l = f.readlines()
+			for i in l:
+				if 'bosh upload stemcell http' in i:
+					node_index = l.index(i)
+					old_stemcell = i.split()[3]
+					i = i.replace(old_stemcell, stemcell_url)
+					l[node_index] = i
+					break
+			with open(deploy_cf_sh_path, 'w') as f:
+				f.writelines(l)
 
 	except KeyError as e:
 		print('get environ failed, err:{}'.format(e))
