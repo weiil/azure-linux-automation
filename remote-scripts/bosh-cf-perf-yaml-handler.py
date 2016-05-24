@@ -47,9 +47,12 @@ def updatebosh(fname, newfile, mode):
 				if 'instance_type' in i:
 					node_index = l.index(i)
 					print('updating bosh')
-					print('find instance_type node for bosh, changing...')
-					l[node_index] = l[node_index].replace(l[node_index].split()[-1],bosh_instance_type)
-					print('done')
+					if bosh_instance_type == '':
+						print('keep current bosh instance type as default, no changing...')
+					else:
+						print('find instance_type node for bosh, changing...')
+						l[node_index] = l[node_index].replace(l[node_index].split()[-1],bosh_instance_type)
+						print('done')
 					# insert storage account name node
 					print('inserting storage_account_name node for bosh')
 					char_start_index = l[node_index].index('instance_type')
@@ -112,10 +115,13 @@ def updatecf(fname, newfile, mode):
 					for ii in l[node_index:]:
 						if 'instance_type' in ii:
 							node_index = l.index(ii, node_index)
-							print('find instance_type node for compile, changing...')
+							if compile_instance_type == '':
+								print('keep current compilation instance type as default, no changing...')
+							else:
+								print('find instance_type node for compile, changing...')
+								l[node_index] = l[node_index].replace(l[node_index].split()[-1],compile_instance_type)
+								print('done')
 							break
-					l[node_index] = l[node_index].replace(l[node_index].split()[-1],compile_instance_type)
-					print('done')
 					# get the space length for print
 					print('inserting storage_account_name node for compile')
 					char_start_index = l[node_index].index('instance_type')
