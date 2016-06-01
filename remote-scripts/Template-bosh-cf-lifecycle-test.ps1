@@ -218,7 +218,7 @@ gem sources -l
 gem sources -c
 gem sources -u
 
-retryop 'gem install bundler --no-ri --no-rdoc'
+retryop 'sudo gem install bundler --no-ri --no-rdoc'
 sudo ln -s /usr/local/bin/bundle /usr/bin/bundle
 retryop 'bundle install'
 bundle exec rspec spec/integration
