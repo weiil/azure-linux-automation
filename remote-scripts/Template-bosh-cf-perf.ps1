@@ -162,7 +162,7 @@ deploy_cf_result=1
 retry=1
 while [ `${retry} -lt 4 ]; do
     echo 'deploy bosh retry#'`${retry}
-    { time ./deploy_bosh.sh; } &> deploy_bosh_test.log
+    { time ./deploy_bosh.sh; } &> deploy_bosh_test_`${retry}.log
     if [ `$? -eq 0 ]; then
         echo 'deploy_bosh_ok'
         deploy_bosh_result=0
@@ -206,7 +206,7 @@ if [ -e DEPLOY_CF_PASS ]; then
     python bosh-cf-perf-log-analyser.py cf
 fi
 
-tar -czf all.tgz deploy_bosh_test.log deploy_cf_test.log bosh.yml example_manifests/multiple-vm-cf.yml
+tar -czf all.tgz deploy_bosh_test_*.log deploy_cf_test.log bosh.yml example_manifests/multiple-vm-cf.yml
 "@
 
     # ssh to devbox 
