@@ -33,12 +33,21 @@ try
     $BOSH_AZURE_CPI_URL = $parameters.cpiUrl
     $BOSH_AZURE_CPI_SHA1 = $parameters.cpiSha1
     $BOSH_AZURE_INSTANCE_TYPE = $parameters.boshInstanceType
+    $BOSH_AZURE_DISK_SIZE = $parameters.boshDiskSize
     $BOSH_AZURE_COMPILE_INSTANCE_TYPE = $parameters.compilationInstanceType
+    $BOSH_AZURE_COMPILE_DISK_SIZE = $parameters.compilationDiskSize
+    $BOSH_AZURE_CF_RP_SMALL = $parameters.cfSmallInstanceType
+    $BOSH_AZURE_CF_RP_MEDIUM = $parameters.cfMediumInstanceType
+    $BOSH_AZURE_CF_RP_LARGE = $parameters.cfLargeInstanceType
     $BOSH_AZURE_STEMCELL_URL = $parameters.stemcellUrl
     $BOSH_AZURE_STEMCELL_SHA1 = $parameters.stemcellSha1
 
     $bosh_instance_require_premium = $False
     $compile_instance_require_premium = $False
+    $cf_rp_small_require_premium = $False
+    $cf_rp_medium_require_premium = $False
+    $cf_rp_large_require_premium = $False
+
     if(($BOSH_AZURE_INSTANCE_TYPE -match '_ds') -or ($BOSH_AZURE_INSTANCE_TYPE -match '_gs'))
     {
         $bosh_instance_require_premium = $True
@@ -47,6 +56,21 @@ try
     if(($BOSH_AZURE_COMPILE_INSTANCE_TYPE -match '_ds') -or ($BOSH_AZURE_COMPILE_INSTANCE_TYPE -match '_gs'))
     {
         $compile_instance_require_premium = $True
+    }
+
+    if(($BOSH_AZURE_CF_RP_SMALL -match '_ds') -or ($BOSH_AZURE_CF_RP_SMALL -match '_gs'))
+    {
+        $cf_rp_small_require_premium = $True
+    }
+
+    if(($BOSH_AZURE_CF_RP_MEDIUM -match '_ds') -or ($BOSH_AZURE_CF_RP_MEDIUM -match '_gs'))
+    {
+        $cf_rp_medium_require_premium = $True
+    }
+
+    if(($BOSH_AZURE_CF_RP_LARGE -match '_ds') -or ($BOSH_AZURE_CF_RP_LARGE -match '_gs'))
+    {
+        $cf_rp_large_require_premium = $True
     }
 
     # save template parameter file
@@ -84,9 +108,12 @@ try
     # set the default storage firstly
     $BOSH_AZURE_VM_STORAGE_ACCOUNT = $storage
     $BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT = $storage
+    $BOSH_AZURE_CF_RP_SMALL_STORAGE_ACCOUNT = $storage
+    $BOSH_AZURE_CF_RP_MEDIUM_STORAGE_ACCOUNT = $storage
+    $BOSH_AZURE_CF_RP_LARGE_STORAGE_ACCOUNT = $storage
 
     # prepare the required storage and override if needed
-    if ($bosh_instance_require_premium -or $compile_instance_require_premium)
+    if ($bosh_instance_require_premium -or $compile_instance_require_premium -or $cf_rp_small_require_premium -or $cf_rp_medium_require_premium -or $cf_rp_large_require_premium)
     {
         $curtime1 = Get-Date
         $timestr1 = "" + $curtime.Month + $curtime.Day + $curtime.Hour + $curtime.Minute + $curtime.Second
@@ -135,8 +162,26 @@ try
         $BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT = $premiumstorage
     }
 
+    if($cf_rp_small_require_premium)
+    {
+        $BOSH_AZURE_CF_RP_SMALL_STORAGE_ACCOUNT = $premiumstorage
+    }
+
+    if($cf_rp_medium_require_premium)
+    {
+        $BOSH_AZURE_CF_RP_MEDIUM_STORAGE_ACCOUNT = $premiumstorage
+    }
+
+    if($cf_rp_large_require_premium)
+    {
+        $BOSH_AZURE_CF_RP_LARGE_STORAGE_ACCOUNT = $premiumstorage
+    }
+
     LogMsg "bosh instance storage: $BOSH_AZURE_VM_STORAGE_ACCOUNT"
     LogMsg "compilation instance storage: $BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT"
+    LogMsg "resource_pool_small_z1 storage: $BOSH_AZURE_CF_RP_SMALL_STORAGE_ACCOUNT"
+    LogMsg "resource_pool_medium_z1 storage: $BOSH_AZURE_CF_RP_MEDIUM_STORAGE_ACCOUNT"
+    LogMsg "resource_pool_large_z1 storage: $BOSH_AZURE_CF_RP_LARGE_STORAGE_ACCOUNT"
     
     $pre = @"
 #!/usr/bin/env bash
@@ -147,6 +192,14 @@ export BOSH_AZURE_INSTANCE_TYPE='${BOSH_AZURE_INSTANCE_TYPE}'
 export BOSH_AZURE_VM_STORAGE_ACCOUNT='${BOSH_AZURE_VM_STORAGE_ACCOUNT}'
 export BOSH_AZURE_COMPILE_INSTANCE_TYPE='${BOSH_AZURE_COMPILE_INSTANCE_TYPE}'
 export BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT='${BOSH_AZURE_COMPILE_VM_STORAGE_ACCOUNT}'
+export BOSH_AZURE_DISK_SIZE='${BOSH_AZURE_DISK_SIZE}'
+export BOSH_AZURE_COMPILE_DISK_SIZE='${BOSH_AZURE_COMPILE_DISK_SIZE}'
+export BOSH_AZURE_CF_RP_SMALL='${BOSH_AZURE_CF_RP_SMALL}'
+export BOSH_AZURE_CF_RP_MEDIUM='${BOSH_AZURE_CF_RP_MEDIUM}'
+export BOSH_AZURE_CF_RP_LARGE='${BOSH_AZURE_CF_RP_LARGE}'
+export BOSH_AZURE_CF_RP_SMALL_STORAGE_ACCOUNT='${BOSH_AZURE_CF_RP_SMALL_STORAGE_ACCOUNT}'
+export BOSH_AZURE_CF_RP_MEDIUM_STORAGE_ACCOUNT='${BOSH_AZURE_CF_RP_MEDIUM_STORAGE_ACCOUNT}'
+export BOSH_AZURE_CF_RP_LARGE_STORAGE_ACCOUNT='${BOSH_AZURE_CF_RP_LARGE_STORAGE_ACCOUNT}'
 export BOSH_AZURE_STEMCELL_URL='${BOSH_AZURE_STEMCELL_URL}'
 export BOSH_AZURE_STEMCELL_SHA1='${BOSH_AZURE_STEMCELL_SHA1}'
 
@@ -166,6 +219,7 @@ while [ `${retry} -lt 4 ]; do
     if [ `$? -eq 0 ]; then
         echo 'deploy_bosh_ok'
         deploy_bosh_result=0
+        mv deploy_bosh_test_`${retry}.log deploy_bosh_test.log
         break
     else
         let retry=retry+1
@@ -206,7 +260,7 @@ if [ -e DEPLOY_CF_PASS ]; then
     python bosh-cf-perf-log-analyser.py cf
 fi
 
-tar -czf all.tgz deploy_bosh_test_*.log deploy_cf_test.log bosh.yml example_manifests/multiple-vm-cf.yml
+tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manifests/multiple-vm-cf.yml
 "@
 
     # ssh to devbox 
@@ -231,7 +285,7 @@ tar -czf all.tgz deploy_bosh_test_*.log deploy_cf_test.log bosh.yml example_mani
     # update bosh.yml and example_manifests\multiple-vm-cf.yml
     LogMsg "update yaml config files in devbox"
     $out1 = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./pre-action.sh"
-    if ($out1 -match 'update yaml config for bosh successfully' -and $out1 -match 'update yaml config for compile successfully')
+    if ($out1 -match 'update yaml config for bosh successfully' -and $out1 -match 'update yaml config for cf successfully')
     {
         $testResult_update_yaml = "PASS"
         LogMsg "update yaml files successfully."

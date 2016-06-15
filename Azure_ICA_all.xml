@@ -5030,7 +5030,12 @@
         <stemcellUrl></stemcellUrl>
         <stemcellSha1></stemcellSha1>
         <boshInstanceType></boshInstanceType>
+        <boshDiskSize></boshDiskSize>
         <compilationInstanceType></compilationInstanceType>
+        <compilationDiskSize></compilationDiskSize>
+        <cfSmallInstanceType></cfSmallInstanceType>
+        <cfMediumInstanceType></cfMediumInstanceType>
+        <cfLargeInstanceType></cfLargeInstanceType>
       </parameters>
       <TestType>
       </TestType>
