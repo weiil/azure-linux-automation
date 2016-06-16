@@ -148,10 +148,11 @@ fi
     # generate the life cycle test script
     $src = @"
 #!/usr/bin/env bash
+cf_ip=``grep -i 'cf-ip' settings | awk {'print `$2'} | tr -d ','``
 
 export BOSH_AZURE_SUBSCRIPTION_ID=$subscription_id
 export BOSH_AZURE_STORAGE_ACCOUNT_NAME=$storage
-export BOSH_AZURE_RESOURCE_GROUP_NAME=$rgname
+export BOSH_AZURE_RESOURCE_GROUP_NAME='$rgname'
 export BOSH_AZURE_TENANT_ID=$tenantid
 export BOSH_AZURE_CLIENT_ID=$clientid
 export BOSH_AZURE_CLIENT_SECRET=$clientsecret
@@ -160,6 +161,11 @@ export BOSH_AZURE_SUBNET_NAME='Bosh'
 export BOSH_AZURE_SSH_PUBLIC_KEY='$sshpublickey'
 export BOSH_AZURE_DEFAULT_SECURITY_GROUP='nsg-bosh'
 export BOSH_AZURE_ENVIRONMENT='$azureenv'
+export BOSH_AZURE_RESOURCE_GROUP_NAME_FOR_VMS='$rgname'
+export BOSH_AZURE_RESOURCE_GROUP_NAME_FOR_NETWORK='$rgname'
+export BOSH_AZURE_PRIMARY_PUBLIC_IP=`$cf_ip
+export BOSH_AZURE_SECONDARY_PUBLIC_IP=`$cf_ip
+
 
 if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
     export STEMCELL_DOWNLOAD_URL='https://cloudfoundry.blob.core.chinacloudapi.cn/stemcells/bosh-stemcell-3169-azure-hyperv-ubuntu-trusty-go_agent.tgz'
