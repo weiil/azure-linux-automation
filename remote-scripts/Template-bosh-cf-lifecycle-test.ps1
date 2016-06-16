@@ -148,7 +148,7 @@ fi
     # generate the life cycle test script
     $src = @"
 #!/usr/bin/env bash
-cf_ip=``grep -i 'cf-ip' settings | awk {'print `$2'} | tr -d ','``
+cf_ip=``grep -i 'cf-ip' settings | awk {'print `$2'} | tr -d ',' | tr -d '"'``
 
 export BOSH_AZURE_SUBSCRIPTION_ID=$subscription_id
 export BOSH_AZURE_STORAGE_ACCOUNT_NAME=$storage
@@ -163,8 +163,8 @@ export BOSH_AZURE_DEFAULT_SECURITY_GROUP='nsg-bosh'
 export BOSH_AZURE_ENVIRONMENT='$azureenv'
 export BOSH_AZURE_RESOURCE_GROUP_NAME_FOR_VMS='$rgname'
 export BOSH_AZURE_RESOURCE_GROUP_NAME_FOR_NETWORK='$rgname'
-export BOSH_AZURE_PRIMARY_PUBLIC_IP=`$cf_ip
-export BOSH_AZURE_SECONDARY_PUBLIC_IP=`$cf_ip
+export BOSH_AZURE_PRIMARY_PUBLIC_IP=`${cf_ip}
+export BOSH_AZURE_SECONDARY_PUBLIC_IP=`${cf_ip}
 
 
 if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
