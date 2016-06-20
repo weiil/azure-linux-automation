@@ -129,6 +129,7 @@ def updatecf(fname, newfile, mode):
 					"loggregator_trafficcontroller_z1": "medium_z1",
 					"router_z1": "medium_z1",
 					"acceptance_tests": "medium_z1",
+					"acceptance-tests-internetless": "medium_z1",
 					"smoke_tests": "medium_z1",
 			}
 			
