@@ -118,7 +118,9 @@ python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml deploym
         }
     }
 
+    # upload deploy log to devbox
     $out | Out-File .\deploy_cloudfoundry.log -Encoding utf8
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\deploy_cloudfoundry.log ${dep_ssh_info}:
 
     if ($out -match "multi_vms_cf_deploy_ok")
     {
