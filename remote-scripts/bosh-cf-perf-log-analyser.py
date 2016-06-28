@@ -68,7 +68,7 @@ def parsecflog():
 				print('deploy_cf_total={}'.format(i.split()[-1]))
 		print('deploy_cf_upload_stemcell={}'.format(tasks_duration[0]))
 		print('deploy_cf_release_upload={}'.format(tasks_duration[1]))
-		print('deploy_cf_update_jobs:{}'.format(caltime(tasks_duration[2], t_compile, t_createvm)))
+		print('deploy_cf_update_jobs={}'.format(caltime(tasks_duration[2], t_compile, t_createvm)))
 	else:
 		print('deploy_cf_log_not_found')	
 

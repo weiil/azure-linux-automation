@@ -323,8 +323,9 @@ tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manif
     
     LogMsg "analys result from deploy logs"
     $out3 = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./post-action.sh"
-    LogMsg "-----------------------STATISTIC-----------------------"
+    LogMsg "-----------------------START STATISTIC-----------------------"
     foreach($i in $out3){ LogMsg $i }
+    LogMsg "-----------------------END STATISTIC-----------------------"
 
     $downloadto = "all-" + $isDeployed.GetValue(1) + ".tgz"
     LogMsg "download test archives as $downloadto"
