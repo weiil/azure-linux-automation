@@ -10,6 +10,19 @@ try
     $parameters = $currentTestData.parameters
     $location = $xmlConfig.config.Azure.General.Location
 
+    if($global:RunnerMode -eq $True)
+    {
+        $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment
+        if($out -match "DONE")
+        {
+            LogMsg "update azuredeploy.json successfully."
+        }
+        else 
+        {
+            LogMsg "update azuredeploy.json failed. please check."    
+        }
+    }
+
     if(Test-Path .\azuredeploy.parameters.json)
     {
         Remove-Item .\azuredeploy.parameters.json
