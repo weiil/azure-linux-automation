@@ -12,12 +12,12 @@ try
 
     if($global:RunnerMode -eq "Runner")
     {
-        $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment runner
+        $out = .\remote-scripts\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment runner
     }
 
     if($global:RunnerMode -eq "OnDemand" -and $global:OnDemandVersInfo -ne $null)
     {
-        $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment ondemand $global:OnDemandVersInfo
+        $out = .\remote-scripts\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment ondemand $global:OnDemandVersInfo
     }
 
     if(Test-Path .\azuredeploy.parameters.json)
