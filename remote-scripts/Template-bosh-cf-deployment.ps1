@@ -15,7 +15,7 @@ try
         $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment runner
     }
 
-    if($global:RunnerMode -eq "OnDemand" and $global:OnDemandVersInfo -ne $null)
+    if($global:RunnerMode -eq "OnDemand" -and $global:OnDemandVersInfo -ne $null)
     {
         $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment ondemand $global:OnDemandVersInfo
     }
