@@ -39,15 +39,6 @@ try
     $jsonfile.parameters.clientSecret.value = $parameters.clientSecret
     $jsonfile.parameters.autoDeployBosh.value = $parameters.autoDeployBosh
     
-    # if autoDeployBosh=enabled: automatic bosh deployment with default configs and ignore the stemcell specified 
-    # if autoDeployBosh=disabled: configure then execute deploy bosh cf deployments on devbox
-    if($parameters.autoDeployBosh -eq "disabled")
-    {
-        $BOSH_AZURE_CPI_URL = $parameters.cpiUrl
-        $BOSH_AZURE_CPI_SHA1 = $parameters.cpiSha1
-        $BOSH_AZURE_STEMCELL_URL = $parameters.stemcellUrl
-        $BOSH_AZURE_STEMCELL_SHA1 = $parameters.stemcellSha1
-    }
     # save template parameter file
     $jsonfile | ConvertTo-Json | Out-File .\azuredeploy.parameters.json
     if(Test-Path .\azuredeploy.parameters.json)
@@ -64,10 +55,8 @@ try
 
     if ($isDeployed[0] -eq $True)
     {
-        if ($parameters.autoDeployBosh -eq "enabled")
-        {
-            $testResult_deploy_bosh = "PASS"
-        }
+
+        $testResult_deploy_bosh = "PASS"
     }
     else
     {
@@ -82,26 +71,14 @@ try
     $sshKey = "cf_devbox_privatekey.ppk"
     $command = 'hostname'
     
-$pre = @"
-#!/usr/bin/env bash
-
-export BOSH_AZURE_CPI_URL='${BOSH_AZURE_CPI_URL}'
-export BOSH_AZURE_CPI_SHA1='${BOSH_AZURE_CPI_SHA1}'
-export BOSH_AZURE_STEMCELL_URL='${BOSH_AZURE_STEMCELL_URL}'
-export BOSH_AZURE_STEMCELL_SHA1='${BOSH_AZURE_STEMCELL_SHA1}'
-
-python bosh-cf-perf-yaml-handler.py bosh.yml deployment
-python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml deployment
-"@
-    
     # ssh to devbox and deploy multi-vms cf
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "$command"
 
-    if($parameters.autoDeployBosh -eq "enabled")
-    {
-        $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"
-    }
-    if($parameters.autoDeployBosh -eq "disabled")
+    $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"
+    
+
+    # autoDeployBosh always set to enabled in cf runner
+<#    if($parameters.autoDeployBosh -eq "disabled")
     {
         LogMsg "generate test scripts"
         $pre | Out-File .\pre-action.sh -Encoding utf8
@@ -126,7 +103,7 @@ python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml deploym
             $testResult_deploy_bosh = "Failed"
             throw 'deploy bosh failed, please check.'
         }
-    }
+    } #>
 
     # upload deploy log to devbox
     $out | Out-File .\deploy_cloudfoundry.log -Encoding utf8
