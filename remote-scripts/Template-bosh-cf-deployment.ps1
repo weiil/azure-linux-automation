@@ -84,7 +84,33 @@ try
         LogMsg "UPDATED bosh cli version： $out"
     }
 
-    $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"
+    LogMsg "Install expect"
+    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install expect -y"
+    $tmprunsh = @"
+#!/bin/bash
+/home/azureuser/deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail
+"@
+
+    $wrappersh = @"
+#!/usr/bin/expect
+set timeout 360
+spawn  /home/azureuser/tmprun.sh
+expect "Enter a password to use in example_manifests/multiple-vm-cf.yml" { send "\r" }
+expect "Type yes to continue" { send "yes\r" }
+expect "Enter a password to use in example_manifests/multiple-vm-cf.yml"
+"@
+    LogMsg "generate test scripts"
+    $wrappersh | Out-File .\wrapper.sh -Encoding utf8
+    $tmprunsh | Out-File .\tmprun.sh -Encoding utf8
+    .\tools\dos2unix.exe -q .\wrapper.sh
+    .\tools\dos2unix.exe -q .\tmprun.sh
+    LogMsg "upload test scripts"
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\wrapper.sh ${dep_ssh_info}:
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\tmprun.sh ${dep_ssh_info}:
+    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x wrapper.sh"
+    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x tmprun.sh"
+
+    $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./wrapper.sh"
 
     # autoDeployBosh always set to enabled in cf runner
 <#    if($parameters.autoDeployBosh -eq "disabled")
