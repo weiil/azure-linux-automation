@@ -74,8 +74,17 @@ try
     # ssh to devbox and deploy multi-vms cf
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "$command"
 
+    $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -v"
+    LogMsg "Current bosh cli version： $out"
+    if($global:RunnerMode -eq "Runner")
+    {
+        LogMsg "Runner mode, Update bosh cli to the latest"
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo gem install bosh_cli --no-ri --no-rdoc"
+        $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -v"
+        LogMsg "UPDATED bosh cli version： $out"
+    }
+
     $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml && echo multi_vms_cf_deploy_ok || echo multi_vms_cf_deploy_fail"
-    
 
     # autoDeployBosh always set to enabled in cf runner
 <#    if($parameters.autoDeployBosh -eq "disabled")
