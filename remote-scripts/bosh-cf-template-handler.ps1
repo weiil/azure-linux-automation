@@ -1,11 +1,15 @@
-﻿if($args.Length -ne 2)
+﻿if($args.Length -lt 3)
 {
-    Write-Host "template file path and azure environment all must be given."
+    Write-Host "template file path, azure environment and mode all must be given."
+    Write-Host "mode allowed values ['runner' | 'ondemand']."
+    Write-Host "when mode set to 'ondemand', param object for on-demand versions of bosh, bosh-azure-cpi, stemcell and bosh-init must be given."
     return
 }
 
 $file_path = $args[0]
 $env = $args[1]
+$mode = $args[2]
+$d = $args[3]
 
 if(-not (Test-Path $file_path))
 {
@@ -79,7 +83,7 @@ Function GetFileHash([string]$url)
 {
     try
     {
-        $outfile = $url.Split('/')[-1]
+        $outfile = $url.Split('?')[0].Split('/')[-1]
         Invoke-WebRequest -Uri $url -OutFile $outfile
         $sha1 = $(Get-FileHash -Algorithm SHA1 -Path $outfile).Hash.ToLower()
         return $sha1
@@ -96,71 +100,150 @@ Function GetFileHash([string]$url)
     }
 }
 
-Function UpdateDeployTemplateJsonForRunner([psobject]$json_src, [string]$azureenv)
+Function GetVersionFromOriginTemplate([psobject]$json_src, [string]$azureenv)
 {
-    $latest_bosh_release = GetLatest $global_latest_bosh_release_url
-    $latest_bosh_release_sha1 = GetFileHash $global_latest_bosh_release_url
-    $latest_bosh_azure_cpi_release = GetLatest $global_latest_bosh_azure_cpi_url
-    $latest_bosh_azure_cpi_release_sha1 = GetFileHash $global_latest_bosh_azure_cpi_url
-    $latest_stemcell = GetLatest $global_stemcell_url
-    $latest_stemcell_sha1 = GetFileHash $global_stemcell_url
-    $latest_bosh_init = GetLatestBoshInit
-
-    Write-Host "-Latest Bosh Release: $latest_bosh_release"
-    Write-Host " --SHA1: $latest_bosh_release_sha1"
-    Write-Host "-Latest Bosh Azure CPI Release: $latest_bosh_azure_cpi_release"
-    Write-Host " --SHA1: $latest_bosh_azure_cpi_release_sha1"
-    Write-Host "-Latest Stemcell: $latest_stemcell"
-    Write-Host " --SHA1: $latest_stemcell_sha1"
-    Write-Host "-Latest Bosh Init: $latest_bosh_init"
-
+    $d_vers = @{}
     $json_out = $json_src
     $vars = $json_out.variables
 
     if($azureenv -eq "AzureCloud")
     {
-        Write-Host "Update vars for AzureCloud"
-        $vars.environmentAzureCloud.boshReleaseUrl = $global_latest_bosh_release_url
-        $vars.environmentAzureCloud.boshReleaseSha1 = $latest_bosh_release_sha1
-        $vars.environmentAzureCloud.boshAzureCPIReleaseUrl = $global_latest_bosh_azure_cpi_url
-        $vars.environmentAzureCloud.boshAzureCPIReleaseSha1 = $latest_bosh_azure_cpi_release_sha1
-        $vars.environmentAzureCloud.stemcellUrl = $global_stemcell_url
-        $vars.environmentAzureCloud.stemcellSha1 = $latest_stemcell_sha1
-        if($vars.environmentAzureCloud.boshInitUrl -match "\d+.?\d+.?\d+")
-        {
-            $vars.environmentAzureCloud.boshInitUrl = $vars.environmentAzureCloud.boshInitUrl.Replace($Matches.0,$latest_bosh_init)
-        }
+        $env_flag = "environmentAzureCloud"
     }
-
     if($azureenv -eq "AzureChinaCloud")
     {
-        Write-Host "Update vars for AzureChinaCloud"
-        if($vars.environmentAzureChinaCloud.boshReleaseUrl -match "\d+.?\d+")
+        $env_flag = "environmentAzureChinaCloud"
+    }
+
+    if($vars.$env_flag.boshReleaseUrl -match "\d+.?\d+")
+    {
+        $d_vers['bosh'] = $Matches.0
+    }
+
+    if($vars.$env_flag.boshAzureCPIReleaseUrl -match "\d+.?\d+")
+    {
+        $d_vers['boshazurecpi'] = $Matches.0
+    }
+    
+    if($vars.$env_flag.stemcellUrl -match "\d+.?\d+")
+    {
+        $d_vers['stemcell'] = $Matches.0
+    }
+
+    if($vars.$env_flag.boshInitUrl -match "\d+.?\d+.?\d+")
+    {
+        $d_vers['boshinit'] = $Matches.0
+    }
+
+    return $d_vers
+}
+
+Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [string]$mode, [psobject]$dictvers)
+{
+    $json_out = $json_src
+    $vars = $json_out.variables
+    $d_origin_vers = GetVersionFromOriginTemplate $json_src $azureenv
+
+    if($azureenv -eq "AzureCloud")
+    {
+        $env_flag = "environmentAzureCloud"
+    }
+    if($azureenv -eq "AzureChinaCloud")
+    {
+        $env_flag = "environmentAzureChinaCloud"
+    }
+
+    if($mode -eq "runner")
+    {
+        Write-Host "Update azuredeploy.json with latest version"
+        $bosh_v = GetLatest $global_latest_bosh_release_url
+        $bosh_azure_cpi_v = GetLatest $global_latest_bosh_azure_cpi_url
+        $stemcell_v = GetLatest $global_stemcell_url
+        $bosh_init_v = GetLatestBoshInit
+        $log_flag = "Latest"
+    }
+
+    if($mode -eq "ondemand")
+    {
+        Write-Host "Update azuredeploy.json with demand version"
+        if($dictvers -ne $null)
         {
-            $vars.environmentAzureChinaCloud.boshReleaseUrl = $vars.environmentAzureChinaCloud.boshReleaseUrl.Replace($Matches.0,$latest_bosh_release)
-        }
-        $vars.environmentAzureChinaCloud.boshReleaseSha1 = $latest_bosh_release_sha1
-        if($vars.environmentAzureChinaCloud.boshAzureCPIReleaseUrl -match "\d+.?\d+")
-        {
-            $vars.environmentAzureChinaCloud.boshAzureCPIReleaseUrl = $vars.environmentAzureChinaCloud.boshAzureCPIReleaseUrl.Replace($Matches.0,$latest_bosh_azure_cpi_release)
-        }
-        $vars.environmentAzureChinaCloud.boshAzureCPIReleaseSha1 = $latest_bosh_azure_cpi_release_sha1
-        if($vars.environmentAzureChinaCloud.stemcellUrl -match "\d+.?\d+")
-        {
-            $vars.environmentAzureChinaCloud.stemcellUrl = $vars.environmentAzureChinaCloud.stemcellUrl.Replace($Matches.0,$latest_stemcell)
-        }
-        $vars.environmentAzureChinaCloud.stemcellSha1 = $latest_stemcell_sha1
-        if($vars.environmentAzureChinaCloud.boshInitUrl -match "\d+.?\d+.?\d+")
-        {
-            $vars.environmentAzureChinaCloud.boshInitUrl = $vars.environmentAzureChinaCloud.boshInitUrl.Replace($Matches.0,$latest_bosh_init)
+            $bosh_v = $dictvers.bosh
+            $bosh_azure_cpi_v = $dictvers.boshazurecpi
+            $stemcell_v = $dictvers.stemcell
+            $bosh_init_v = $dictvers.boshinit
+
+            if($dictvers.bosh -eq "KEEP_ORIGIN")
+            {
+                $bosh_v = $d_origin_vers['bosh']
+            }
+            
+            if($dictvers.boshazurecpi -eq "KEEP_ORIGIN")
+            {
+                $bosh_azure_cpi_v = $d_origin_vers['boshazurecpi']
+            }
+            
+            if($dictvers.stemcell -eq "KEEP_ORIGIN")
+            {
+                $stemcell_v = $d_origin_vers['stemcell']
+            }
+            
+            if($dictvers.boshinit -eq "KEEP_ORIGIN")
+            {
+                $bosh_init_v = $d_origin_vers['boshinit']
+            }
+            
+            $log_flag = "Demand"
         }
     }
 
+    $bosh_release_url = $global_latest_bosh_release_url + "?v=" + $bosh_v
+    $bosh_azure_cpi_url = $global_latest_bosh_azure_cpi_url + "?v=" + $bosh_azure_cpi_v
+    $stemcell_url = $global_stemcell_url + "?v=" + $stemcell_v
+    $bosh_release_sha1 = $vars.$env_flag.boshReleaseSha1
+    $bosh_azure_cpi_sha1 = $vars.$env_flag.boshAzureCPIReleaseSha1
+    $stemcell_sha1 = $vars.$env_flag.stemcellSha1
+
+    # get sha1 just when need to
+    if($bosh_v -ne $d_origin_vers['bosh'])
+    {
+        $bosh_release_sha1 = GetFileHash $bosh_release_url
+    }
+    if($bosh_azure_cpi_v -ne $d_origin_vers['boshazurecpi'])
+    {
+        $bosh_azure_cpi_sha1 = GetFileHash $bosh_azure_cpi_url
+    }
+    if($stemcell_v -ne $d_origin_vers['stemcell'])
+    {
+        $stemcell_sha1 = GetFileHash $stemcell_url
+    }
+
+    Write-Host "-$log_flag Bosh Release: $bosh_v"
+    #Write-Host " --URL: $bosh_release_url"
+    Write-Host " --SHA1: $bosh_release_sha1"
+    Write-Host "-$log_flag Bosh Azure CPI Release: $bosh_azure_cpi_v"
+    #Write-Host " --URL: $bosh_azure_cpi_url"
+    Write-Host " --SHA1: $bosh_azure_cpi_sha1"
+    Write-Host "-$log_flag Stemcell: $stemcell_v"
+    #Write-Host " --URL: $stemcell_url"
+    Write-Host " --SHA1: $stemcell_sha1"
+    Write-Host "-$log_flag Bosh Init: $bosh_init_v"
+
+    Write-Host "Update vars for $azureenv"
+
+    $vars.$env_flag.boshReleaseUrl = $vars.$env_flag.boshReleaseUrl.Replace($d_origin_vers['bosh'],$bosh_v)
+    $vars.$env_flag.boshReleaseSha1 = $bosh_release_sha1
+    $vars.$env_flag.boshAzureCPIReleaseUrl = $vars.$env_flag.boshAzureCPIReleaseUrl.Replace($d_origin_vers['boshazurecpi'],$bosh_azure_cpi_v)
+    $vars.$env_flag.boshAzureCPIReleaseSha1 = $bosh_azure_cpi_sha1        
+    $vars.$env_flag.stemcellUrl = $vars.$env_flag.stemcellUrl.Replace($d_origin_vers['stemcell'],$stemcell_v)        
+    $vars.$env_flag.stemcellSha1 = $stemcell_sha1
+    $vars.$env_flag.boshInitUrl = $vars.$env_flag.boshInitUrl.Replace($d_origin_vers['boshinit'],$bosh_init_v)
+        
     return $json_out
 }
 
 $json_template = Get-Content $file_path -Raw | ConvertFrom-Json
-$update_json_template = UpdateDeployTemplateJsonForRunner $json_template $env
+$update_json_template = UpdateDeployTemplateJson $json_template $env $mode $d
 $($update_json_template | ConvertTo-Json -Depth 10).Replace("\u0027","'") | Out-File $new_file_path
 
 Move-Item $file_path $($file_path+'.bak')

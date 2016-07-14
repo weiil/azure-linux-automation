@@ -10,17 +10,14 @@ try
     $parameters = $currentTestData.parameters
     $location = $xmlConfig.config.Azure.General.Location
 
-    if($global:RunnerMode -eq $True)
+    if($global:RunnerMode -eq "Runner")
     {
-        $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment
-        if($out -match "DONE")
-        {
-            LogMsg "update azuredeploy.json successfully."
-        }
-        else 
-        {
-            LogMsg "update azuredeploy.json failed. please check."    
-        }
+        $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment runner
+    }
+
+    if($global:RunnerMode -eq "OnDemand" and $global:OnDemandVersInfo -ne $null)
+    {
+        $out = .\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment ondemand $global:OnDemandVersInfo
     }
 
     if(Test-Path .\azuredeploy.parameters.json)
