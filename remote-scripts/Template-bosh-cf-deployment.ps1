@@ -75,13 +75,13 @@ try
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "$command"
 
     $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -v"
-    LogMsg "Current bosh cli version： $out"
+    LogMsg "Current bosh cli version: $out"
     if($global:RunnerMode -eq "Runner")
     {
         LogMsg "Runner mode, Update bosh cli to the latest"
         echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo gem install bosh_cli --no-ri --no-rdoc"
         $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -v"
-        LogMsg "UPDATED bosh cli version： $out"
+        LogMsg "UPDATED bosh cli version: $out"
     }
 
     LogMsg "Install expect"
@@ -93,7 +93,7 @@ try
 
     $wrappersh = @"
 #!/usr/bin/expect
-set timeout 360
+set timeout -1
 spawn  /home/azureuser/tmprun.sh
 expect "Enter a password to use in example_manifests/multiple-vm-cf.yml" { send "\r" }
 expect "Type yes to continue" { send "yes\r" }
