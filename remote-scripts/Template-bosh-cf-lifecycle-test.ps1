@@ -69,6 +69,7 @@ try
 
     $prepare = @"
 #!/usr/bin/env bash
+export BOSH_AZURE_ENVIRONMENT='$azureenv'
 
 sudo apt-get update
 sudo apt-get install -y git
@@ -116,7 +117,11 @@ if [ `$? -eq 0 ]; then
     echo 'azure cli installed.'
 else
     echo 'azure cli seems not installed, will be installed.'
-    retryop 'sudo npm --registry https://registry.npm.taobao.org install azure-cli@0.9.18 -g'
+    if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
+        retryop 'sudo npm --registry https://registry.npm.taobao.org install azure-cli@0.9.18 -g'
+    else
+        retryop 'sudo npm install azure-cli@0.9.18 -g'
+    fi
 fi
 
 node_ver=``node -v``
@@ -140,7 +145,11 @@ if [ `$azurecli_ver = '0.9.18' ]; then
 else
     echo 'azure cli version check failed. will remove and install again.'
     sudo npm remove azure-cli -g
-    retryop 'sudo npm --registry https://registry.npm.taobao.org install azure-cli@0.9.18 -g'
+    if [ `${BOSH_AZURE_ENVIRONMENT} == 'AzureChinaCloud' ]; then
+        retryop 'sudo npm --registry https://registry.npm.taobao.org install azure-cli@0.9.18 -g'
+    else
+        retryop 'sudo npm install azure-cli@0.9.18 -g'
+    fi
 fi
 
 "@
@@ -226,7 +235,7 @@ gem sources -u
 
 retryop 'sudo gem install bundler --no-ri --no-rdoc'
 sudo ln -s /usr/local/bin/bundle /usr/bin/bundle
-retryop 'bundle install'
+retryop 'sudo bundle install'
 bundle exec rspec spec/integration
 "@
 
