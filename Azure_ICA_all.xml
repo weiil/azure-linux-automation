@@ -5025,10 +5025,6 @@
         <clientID></clientID>
         <clientSecret></clientSecret>
         <autoDeployBosh>disabled</autoDeployBosh>
-        <cpiUrl></cpiUrl>
-        <cpiSha1></cpiSha1>
-        <stemcellUrl></stemcellUrl>
-        <stemcellSha1></stemcellSha1>
         <boshInstanceType></boshInstanceType>
         <boshDiskSize></boshDiskSize>
         <compilationInstanceType></compilationInstanceType>

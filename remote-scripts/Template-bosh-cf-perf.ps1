@@ -10,6 +10,11 @@ try
     $parameters = $currentTestData.parameters
     $location = $xmlConfig.config.Azure.General.Location
 
+    if($global:PerfMode -eq "OnDemand" -and $global:OnDemandVersInfo -ne $null)
+    {
+        $out = .\remote-scripts\bosh-cf-template-handler.ps1 ..\azure-quickstart-templates\bosh-setup\azuredeploy.json $parameters.environment ondemand $global:OnDemandVersInfo
+    }
+
     if(Test-Path .\azuredeploy.parameters.json)
     {
         Remove-Item .\azuredeploy.parameters.json
@@ -30,8 +35,6 @@ try
     $jsonfile.parameters.autoDeployBosh.value = $parameters.autoDeployBosh
 
     # perf test params
-    $BOSH_AZURE_CPI_URL = $parameters.cpiUrl
-    $BOSH_AZURE_CPI_SHA1 = $parameters.cpiSha1
     $BOSH_AZURE_INSTANCE_TYPE = $parameters.boshInstanceType
     $BOSH_AZURE_DISK_SIZE = $parameters.boshDiskSize
     $BOSH_AZURE_COMPILE_INSTANCE_TYPE = $parameters.compilationInstanceType
@@ -39,8 +42,6 @@ try
     $BOSH_AZURE_CF_RP_SMALL = $parameters.cfSmallInstanceType
     $BOSH_AZURE_CF_RP_MEDIUM = $parameters.cfMediumInstanceType
     $BOSH_AZURE_CF_RP_LARGE = $parameters.cfLargeInstanceType
-    $BOSH_AZURE_STEMCELL_URL = $parameters.stemcellUrl
-    $BOSH_AZURE_STEMCELL_SHA1 = $parameters.stemcellSha1
 
     $bosh_instance_require_premium = $False
     $compile_instance_require_premium = $False
@@ -186,8 +187,6 @@ try
     $pre = @"
 #!/usr/bin/env bash
 
-export BOSH_AZURE_CPI_URL='${BOSH_AZURE_CPI_URL}'
-export BOSH_AZURE_CPI_SHA1='${BOSH_AZURE_CPI_SHA1}'
 export BOSH_AZURE_INSTANCE_TYPE='${BOSH_AZURE_INSTANCE_TYPE}'
 export BOSH_AZURE_VM_STORAGE_ACCOUNT='${BOSH_AZURE_VM_STORAGE_ACCOUNT}'
 export BOSH_AZURE_COMPILE_INSTANCE_TYPE='${BOSH_AZURE_COMPILE_INSTANCE_TYPE}'
@@ -200,11 +199,9 @@ export BOSH_AZURE_CF_RP_LARGE='${BOSH_AZURE_CF_RP_LARGE}'
 export BOSH_AZURE_CF_RP_SMALL_STORAGE_ACCOUNT='${BOSH_AZURE_CF_RP_SMALL_STORAGE_ACCOUNT}'
 export BOSH_AZURE_CF_RP_MEDIUM_STORAGE_ACCOUNT='${BOSH_AZURE_CF_RP_MEDIUM_STORAGE_ACCOUNT}'
 export BOSH_AZURE_CF_RP_LARGE_STORAGE_ACCOUNT='${BOSH_AZURE_CF_RP_LARGE_STORAGE_ACCOUNT}'
-export BOSH_AZURE_STEMCELL_URL='${BOSH_AZURE_STEMCELL_URL}'
-export BOSH_AZURE_STEMCELL_SHA1='${BOSH_AZURE_STEMCELL_SHA1}'
 
-python bosh-cf-perf-yaml-handler.py bosh.yml performance
-python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml performance
+python bosh-cf-perf-yaml-handler.py bosh.yml
+python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml
 "@
 
     $deploy = @"
@@ -260,7 +257,7 @@ if [ -e DEPLOY_CF_PASS ]; then
     python bosh-cf-perf-log-analyser.py cf
 fi
 
-tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manifests/multiple-vm-cf.yml
+tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manifests/multiple-vm-cf.yml deploy_cloudfoundry.sh
 "@
 
     # ssh to devbox 
