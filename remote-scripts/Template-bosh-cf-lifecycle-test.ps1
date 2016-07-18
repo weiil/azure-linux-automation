@@ -252,6 +252,8 @@ bundle exec rspec spec/integration
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x *.sh"
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./prepare-lifecycletest.sh &> preparetest.log"
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./run-lifecycletest.sh &> lifecycletest.log"
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:preparetest.log preparetest.log
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:lifecycletest.log lifecycletest.log
     $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "cat lifecycletest.log"
 
     if ($out -match "0 failure")
