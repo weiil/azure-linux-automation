@@ -204,11 +204,10 @@ python bosh-cf-perf-yaml-handler.py bosh.yml
 python bosh-cf-perf-yaml-handler.py example_manifests/multiple-vm-cf.yml
 "@
 
-    $deploy = @"
+    $deployboshwithretry = @"
 #!/usr/bin/env bash
 
 deploy_bosh_result=1
-deploy_cf_result=1
 retry=1
 while [ `${retry} -lt 4 ]; do
     echo 'deploy bosh retry#'`${retry}
@@ -223,8 +222,18 @@ while [ `${retry} -lt 4 ]; do
     fi
 done
 
+rm -rf DEPLOY_BOSH_PASS
 if [ `$deploy_bosh_result -eq 0 ]; then
-    { time ./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml; } &> deploy_cf_test.log
+    touch DEPLOY_BOSH_PASS
+fi
+"@
+
+    $deploycfonce = @"
+#!/usr/bin/env bash
+deploy_cf_result=1
+
+if [ -e DEPLOY_BOSH_PASS ]; then
+    ./wrapper.sh
     if [ `$? -eq 0 ]; then
         echo 'deploy_cf_ok'
         deploy_cf_result=0
@@ -235,16 +244,24 @@ else
     echo 'terminate deploy cf since deploy_bosh_failed.'
 fi
 
-rm -rf DEPLOY_BOSH_PASS
 rm -rf DEPLOY_CF_PASS
-
-if [ `$deploy_bosh_result -eq 0 ]; then
-    touch DEPLOY_BOSH_PASS
-fi
-
 if [ `$deploy_cf_result -eq 0 ]; then
     touch DEPLOY_CF_PASS
 fi
+"@
+
+    $tmprunsh = @"
+#!/bin/bash
+{ time ./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml; }
+"@
+
+    $wrappersh = @"
+#!/usr/bin/expect
+set timeout -1
+spawn  /home/azureuser/tmprun.sh
+expect "Enter a password to use in example_manifests/multiple-vm-cf.yml" { send "\r" }
+expect "Type yes to continue" { send "yes\r" }
+expect "Enter a password to use in example_manifests/multiple-vm-cf.yml"
 "@
 
     $post = @"
@@ -266,14 +283,26 @@ tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manif
     LogMsg "generate test scripts"
     $pre | Out-File .\pre-action.sh -Encoding utf8
     .\tools\dos2unix.exe -q .\pre-action.sh
-    $deploy | Out-File .\deployall.sh -Encoding utf8
-    .\tools\dos2unix.exe -q .\deployall.sh
+    
+    $deployboshwithretry | Out-File .\deployboshwithretry.sh -Encoding utf8
+    .\tools\dos2unix.exe -q .\deployboshwithretry.sh
+    $deploycfonce | Out-File .\deploycfonce.sh -Encoding utf8
+    .\tools\dos2unix.exe -q .\deploycfonce.sh
+    $tmprunsh | Out-File .\tmprun.sh -Encoding utf8
+    .\tools\dos2unix.exe -q .\tmprun.sh
+    $wrappersh | Out-File .\wrapper.sh -Encoding utf8
+    .\tools\dos2unix.exe -q .\wrapper.sh
+
     $post | Out-File .\post-action.sh -Encoding utf8
     .\tools\dos2unix.exe -q .\post-action.sh
     LogMsg "upload test scripts"
     echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\pre-action.sh ${dep_ssh_info}:
-    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\deployall.sh ${dep_ssh_info}:
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\deployboshwithretry.sh ${dep_ssh_info}:
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\deploycfonce.sh ${dep_ssh_info}:
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\tmprun.sh ${dep_ssh_info}:
+    echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\wrapper.sh ${dep_ssh_info}:
     echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\post-action.sh ${dep_ssh_info}:
+
     echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\remote-scripts\bosh-cf-perf-yaml-handler.py ${dep_ssh_info}:
     echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\remote-scripts\bosh-cf-perf-log-analyser.py ${dep_ssh_info}:
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x *.sh"
@@ -288,14 +317,17 @@ tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manif
         LogMsg "update yaml files successfully."
         # deploy bosh and cf
         LogMsg "start to deploy bosh then cf"
-        $out2 = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deployall.sh"
+        $out2 = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deployboshwithretry.sh"
         if ($out2 -match "deploy_bosh_ok")
         {
             $testResult_deploy_bosh = "PASS"
             LogMsg "deploy bosh successfully"
 
             # deploy cf 
-            if ($out2 -match "deploy_cf_ok")
+            $outx = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploycfonce.sh"
+            $outx | Out-File .\deploy_cf_test.log -Encoding utf8
+            echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\deploy_cf_test.log ${dep_ssh_info}:
+            if ($outx -match "deploy_cf_ok")
             {
                 $testResult_deploy_multi_vms_cf = "PASS"
                 LogMsg "deploy multi vms cf successfully"
