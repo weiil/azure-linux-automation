@@ -142,7 +142,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./wrapper.sh"
             echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:deploy-$SetupType.log $LogDir\deploy-$SetupType.log
 			#$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/$SetupType.yml && echo cf_deploy_ok || echo cf_deploy_fail"
-			$out = [String]Get-Content $LogDir\deploy-$SetupType.log
+			$out = [String](Get-Content $LogDir\deploy-$SetupType.log)
 			if($SetupType -eq 'multiple-vm-cf')
 			{
 				$DeployedMultipleVMCF = $True
