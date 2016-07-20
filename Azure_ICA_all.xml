@@ -4983,6 +4983,7 @@
       <TestFeature>
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <SubtestValues>single-vm-cf,multiple-vm-cf</SubtestValues>
       <TestID>AzureTemplate_003</TestID>
     </test>
 
