@@ -280,6 +280,9 @@ tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manif
     # ssh to devbox 
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "$command"
 
+    LogMsg "Install expect"
+    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install expect -y"
+
     LogMsg "generate test scripts"
     $pre | Out-File .\pre-action.sh -Encoding utf8
     .\tools\dos2unix.exe -q .\pre-action.sh
