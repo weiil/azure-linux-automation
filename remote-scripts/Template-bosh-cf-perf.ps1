@@ -230,29 +230,26 @@ fi
 
     $deploycfonce = @"
 #!/usr/bin/env bash
-deploy_cf_result=1
 
 if [ -e DEPLOY_BOSH_PASS ]; then
     ./wrapper.sh
-    if [ `$? -eq 0 ]; then
-        echo 'deploy_cf_ok'
-        deploy_cf_result=0
-    else
-        echo 'deploy_cf_failed'
-    fi
 else 
     echo 'terminate deploy cf since deploy_bosh_failed.'
 fi
 
 rm -rf DEPLOY_CF_PASS
-if [ `$deploy_cf_result -eq 0 ]; then
-    touch DEPLOY_CF_PASS
+if [ -e deploy_cf_test.log ];then
+    catch=``cat deploy_cf_test.log | grep 'multiple-cf-on-azure' | grep 'Deployed' | grep 'bosh' | wc -l``
+    if [ `$catch -eq 1 ]; then
+        touch DEPLOY_CF_PASS
+        echo 'deploy_cf_ok'
+    fi
 fi
 "@
 
     $tmprunsh = @"
 #!/bin/bash
-{ time ./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml; }
+{ time ./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml; } | tee deploy_cf_test.log
 "@
 
     $wrappersh = @"
@@ -328,8 +325,6 @@ tar -czf all.tgz deploy_bosh_test*.log deploy_cf_test.log bosh.yml example_manif
 
             # deploy cf 
             $outx = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploycfonce.sh"
-            $outx | Out-File .\deploy_cf_test.log -Encoding utf8
-            echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\deploy_cf_test.log ${dep_ssh_info}:
             if ($outx -match "deploy_cf_ok")
             {
                 $testResult_deploy_multi_vms_cf = "PASS"
