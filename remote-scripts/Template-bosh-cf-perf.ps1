@@ -249,7 +249,7 @@ fi
 
     $tmprunsh = @"
 #!/bin/bash
-{ time ./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml; } | tee deploy_cf_test.log
+( time ./deploy_cloudfoundry.sh example_manifests/multiple-vm-cf.yml ) |& tee deploy_cf_test.log
 "@
 
     $wrappersh = @"
