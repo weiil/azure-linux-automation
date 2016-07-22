@@ -166,7 +166,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 						}
 						else
 						{
-							$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand acceptance-tests-internetless --keep-alive --download-logs --logs-dir /tmp && echo cat_test_pass || echo cat_test_fail; } | tee $SetupType-AcceptanceTest.log"
+							$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand acceptance_tests_internetless --keep-alive --download-logs --logs-dir /tmp && echo cat_test_pass || echo cat_test_fail; } | tee $SetupType-AcceptanceTest.log"
 						}
 						echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:$SetupType-AcceptanceTest.log $LogDir\$SetupType-AcceptanceTest.log
                         $out = [String](Get-Content $LogDir\$SetupType-AcceptanceTest.log)
