@@ -275,7 +275,7 @@ expect "Enter a password to use in example_manifests/multiple-vm-cf.yml"
 		LogMsg "download test archives as $downloadto"
 		echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:all.tgz $downloadto
 
-        $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "cat deploy_cf_test.log | grep 'multiple-cf-on-azure' | grep 'Deployed' | grep 'bosh' | wc -l | tr -d '\n'"
+        $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "cat deploy_cloudfoundry.log | grep 'multiple-cf-on-azure' | grep 'Deployed' | grep 'bosh' | wc -l | tr -d '\n'"
 
 		if ($out -match "1")
 		{
