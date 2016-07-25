@@ -284,7 +284,7 @@ expect "Enter a password to use in example_manifests/multiple-vm-cf.yml"
 		}
 		else
 		{
-			$testResult_deploy_multi_vms_cf = "Failed"
+			$testResult_deploy_multi_vms_cf = "FAIL"
 			LogMsg "deploy multi vms cf failed, please ssh to devbox and check details from deploy_cloudfoundry.log"
 		}
 
@@ -294,7 +294,7 @@ expect "Enter a password to use in example_manifests/multiple-vm-cf.yml"
 		}
 		else
 		{
-			$testResult = "Failed"
+			$testResult = "FAIL"
 		}
 		$resultSummary += CreateResultSummary -testResult $testResult -metaData "" -checkValues "PASS,FAIL,ABORTED" -testName $currentTestData.testName
 		$testStatus = "TestCompleted"
