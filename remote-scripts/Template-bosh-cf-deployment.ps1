@@ -185,7 +185,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 						else
 						{
 							$testResult = "FAIL"
-							if($parameters.environment -eq 'AzureChinaCloud' -and Test-Path "$PWD\$LogDir\$SetupType-AcceptanceTest.tgz")
+							if($parameters.environment -eq 'AzureChinaCloud' -and (Test-Path "$PWD\$LogDir\$SetupType-AcceptanceTest.tgz"))
 							{
 								.\tools\7za.exe e "$PWD\$LogDir\$SetupType-AcceptanceTest.tgz"
 								if(Test-Path "$SetupType-AcceptanceTest.tar")
