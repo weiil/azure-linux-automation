@@ -195,8 +195,8 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 									$ignoredCase = 'Buildpacks java makes the app reachable via its bound route'
 									foreach($file in Get-ChildItem -Path CATS -Filter *.xml.log -recurse)
 									{
-										[XML]$TestResult = Get-Content $file.FullName
-										$failedCases = $TestResult.SelectNodes('testsuite/testcase') | where {$_.failure -ne $null}
+										[XML]$catTestResult = Get-Content $file.FullName
+										$failedCases = $catTestResult.SelectNodes('testsuite/testcase') | where {$_.failure -ne $null}
 										$failedCaseName += $failedCases.Name
 									}
 									if($failedCaseName -eq $ignoredCase)
