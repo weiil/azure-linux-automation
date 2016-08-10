@@ -85,6 +85,7 @@ Function GetFileHash([string]$url)
     {
         $outfile = $url.Split('?')[0].Split('/')[-1]
         Invoke-WebRequest -Uri $url -OutFile $outfile
+        Sleep -Seconds 10
         $sha1 = $(Get-FileHash -Algorithm SHA1 -Path $outfile).Hash.ToLower()
         return $sha1
     }
