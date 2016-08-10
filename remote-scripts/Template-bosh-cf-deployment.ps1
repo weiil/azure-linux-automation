@@ -65,7 +65,8 @@ try
     }
 
     # connect to the devbox then deploy multi-vms cf
-    $dep_ssh_info = $(Get-AzureRmResourceGroupDeployment -ResourceGroupName $isDeployed[1]).outputs['sshDevBox'].Value.Split(' ')[1]
+    $rg_info_outputs = $(Get-AzureRmResourceGroupDeployment -ResourceGroupName $isDeployed[1]).outputs
+    $dep_ssh_info = $($rg_info_outputs.values | Where-Object {$_.value -match 'ssh' -and $_.value -match 'devbox'}).value.Split('')[1]
     LogMsg $dep_ssh_info
     $port = 22
     $sshKey = "cf_devbox_privatekey.ppk"
@@ -93,7 +94,7 @@ try
 		$Domains = @{'AzureCloud'='mscfonline.info';'AzureChinaCloud'='mscfonline.site'}
 		$Environment = $parameters.environment
 		$DomainName = $Domains.$Environment
-		$old_cfip = $(Get-AzureRmResourceGroupDeployment -ResourceGroupName $isDeployed[1]).outputs['cloudFoundryIP'].Value
+		$old_cfip = $($rg_info_outputs.values | Where-Object {$_.value -match '^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$'}).value
 		$new_cfip = (Get-AzureRmPublicIpAddress -ResourceGroupName $SharedNetworkResourceGroupName -Name devbox-cf).IpAddress
 		$testTasks = ("acceptance test","smoke test")
 		$pattern = "Logs saved in \D(\S+)'"
