@@ -155,6 +155,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 			if ($out -match "cf_deploy_ok")
 			{					
 				LogMsg "deploy $SetupType successfully, start to run test"
+                $AnyTestFailed = $false
 				foreach($testTask in $testTasks)
 				{
 					LogMsg "Testing $testTask on $SetupType"
@@ -205,12 +206,17 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 										LogMsg "Ignore the only failed case `"$ignoredCase`""
 										$testResult = "PASS"
 									}
+                                    else 
+                                    {
+                                        $AnyTestFailed = $true
+                                    }
 								}
 								Remove-Item CATS -Force -Recurse
 								Remove-Item "$SetupType-AcceptanceTest.tar" -Force
 							}
 							else
 							{
+                                $AnyTestFailed = $true
 								LogMsg "****************************************************************"
 								LogMsg "$testTask FAIL on deployment $SetupType"
 								LogMsg "please check details from $LogDir\$SetupType-AcceptanceTest.log and $LogDir\$SetupType-AcceptanceTest.tgz"
@@ -232,6 +238,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 						}
 						else
 						{
+                            $AnyTestFailed = $true
 							LogMsg "****************************************************************"
 							LogMsg "$testTask FAIL on deployment $SetupType"
 							LogMsg "please check details from $LogDir\$SetupType-SmokeTest.log and $LogDir\$SetupType-SmokeTest.tgz"
@@ -247,6 +254,10 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 					$resultArr += $testResult
 					$resultSummary +=  CreateResultSummary -testResult $testResult -metaData $metaData -checkValues "PASS,FAIL,ABORTED" -testName $currentTestData.testName
 				}
+                if($AnyTestFailed)
+                {
+                    throw "$SetupType : CAT_fail, abort test for investigation."
+                }
 			}
 			else
 			{
@@ -254,14 +265,8 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 				$testResult = "FAIL"
 				$resultArr += $testResult
 				$resultSummary +=  CreateResultSummary -testResult $testResult -metaData "Deploy $SetupType" -checkValues "PASS,FAIL,ABORTED" -testName $currentTestData.testName
+                throw "$SetupType : cf_deploy_fail, abort test for investigation."
 			}
-		}
-		# Dissociate shared PublicIPAddress for next job use
-		$networkInterface = Get-AzureRmNetworkInterface -ResourceGroupName $isDeployed[1]  | where {$_.IpConfigurations[0].PublicIpAddress.Id -match $SharedNetworkResourceGroupName}
-		if($networkInterface)
-		{
-			$networkInterface.IpConfigurations[0].PublicIpAddress = $null
-			Set-AzureRmNetworkInterface -NetworkInterface $networkInterface
 		}
 	}
 	else
@@ -337,6 +342,14 @@ catch
 }
 Finally
 {
+    # Dissociate shared PublicIPAddress for next job use
+	$networkInterface = Get-AzureRmNetworkInterface -ResourceGroupName $isDeployed[1]  | where {$_.IpConfigurations[0].PublicIpAddress.Id -match $SharedNetworkResourceGroupName}
+	if($networkInterface)
+	{
+		$networkInterface.IpConfigurations[0].PublicIpAddress = $null
+		Set-AzureRmNetworkInterface -NetworkInterface $networkInterface
+	}
+
     $metaData = ""
     if (!$testResult)
     {
