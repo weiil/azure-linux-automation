@@ -175,7 +175,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 						if($out -match $pattern)
 						{
 							$Logfile = $Matches[1]
-							echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:$Logfile $LogDir\$SetupType-AcceptanceTest.tgz
+							echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:$Logfile ..\CI\$SetupType-AcceptanceTest.tgz
 						}
 						if($out -match "cat_test_pass")
 						{
@@ -187,9 +187,9 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 						else
 						{
 							$testResult = "FAIL"
-							if($parameters.environment -eq 'AzureChinaCloud' -and (Test-Path "$PWD\$LogDir\$SetupType-AcceptanceTest.tgz"))
+							if($parameters.environment -eq 'AzureChinaCloud' -and (Test-Path "..\CI\$SetupType-AcceptanceTest.tgz"))
 							{
-								.\tools\7za.exe e "$PWD\$LogDir\$SetupType-AcceptanceTest.tgz"
+								.\tools\7za.exe e "..\CI\$SetupType-AcceptanceTest.tgz"
 								if(Test-Path "$SetupType-AcceptanceTest.tar")
 								{
 									.\tools\7za.exe e "$SetupType-AcceptanceTest.tar" -oCATS
@@ -219,7 +219,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
                                 $AnyTestFailed = $true
 								LogMsg "****************************************************************"
 								LogMsg "$testTask FAIL on deployment $SetupType"
-								LogMsg "please check details from $LogDir\$SetupType-AcceptanceTest.log and $LogDir\$SetupType-AcceptanceTest.tgz"
+								LogMsg "please check details from $LogDir\$SetupType-AcceptanceTest.log and ..\CI\$SetupType-AcceptanceTest.tgz"
 								LogMsg "****************************************************************"								
 							}
 						}						
@@ -241,14 +241,14 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
                             $AnyTestFailed = $true
 							LogMsg "****************************************************************"
 							LogMsg "$testTask FAIL on deployment $SetupType"
-							LogMsg "please check details from $LogDir\$SetupType-SmokeTest.log and $LogDir\$SetupType-SmokeTest.tgz"
+							LogMsg "please check details from $LogDir\$SetupType-SmokeTest.log and ..\CI\$SetupType-SmokeTest.tgz"
 							LogMsg "****************************************************************"
 							$testResult = "FAIL"
 						}						
 						if($out -match $pattern)
 						{
 							$Logfile = $Matches[1]
-							echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:$Logfile $LogDir\$SetupType-SmokeTest.tgz
+							echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:$Logfile ..\CI\$SetupType-SmokeTest.tgz
 						}
 					}
 					$resultArr += $testResult
