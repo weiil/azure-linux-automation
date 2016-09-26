@@ -41,19 +41,28 @@ Function GetLatest([string]$url)
         if($url -match "stemcell")
         {
             $latest = $response.BaseResponse.ResponseUri.OriginalString
+            if($latest -match "stemcell-(\d+.?\d+)")
+            {
+                return $Matches.1
+            }
+            else
+            {
+                Write-Host "Failed to catch version for $url"
+                return $null
+            }
         }
         else
         {
             $latest = $($($response.Headers.'Content-Disposition').Split() | Where-Object {$_.contains('filename')}).Split('=')[-1]
-        }
-        if($latest -match "\d+.?\d+")
-        {
-            return $Matches.0
-        }
-        else
-        {
-            Write-Host "Failed to catch version for $url"
-            return $null
+            if($latest -match "\d+.?\d+")
+            {
+                return $Matches.0
+            }
+            else
+            {
+                Write-Host "Failed to catch version for $url"
+                return $null
+            }
         }
     }
     catch
