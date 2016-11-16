@@ -118,7 +118,7 @@ Function GetVersionFromOriginTemplate([psobject]$json_src, [string]$azureenv)
 
     if($azureenv -eq "AzureCloud")
     {
-        $env_flag = "environmentAzureCloud"
+        $env_flag = "environmentAzure"
     }
     if($azureenv -eq "AzureChinaCloud")
     {
@@ -156,7 +156,7 @@ Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [strin
 
     if($azureenv -eq "AzureCloud")
     {
-        $env_flag = "environmentAzureCloud"
+        $env_flag = "environmentAzure"
     }
     if($azureenv -eq "AzureChinaCloud")
     {
