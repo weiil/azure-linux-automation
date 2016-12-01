@@ -135,9 +135,9 @@ Function GetVersionFromOriginTemplate([psobject]$json_src, [string]$azureenv)
         $d_vers['boshazurecpi'] = $Matches.0
     }
     
-    if($vars.$env_flag.stemcellUrl -match "\d+.?\d+")
+    if($vars.$env_flag.dynamicStemcellUrl -match "\d+.?\d+")
     {
-        $d_vers['stemcell'] = $Matches.0
+        $d_vers['dynamicStemcellUrl'] = $Matches.0
     }
 
     if($vars.$env_flag.boshInitUrl -match "\d+.?\d+.?\d+")
@@ -195,7 +195,7 @@ Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [strin
             
             if($dictvers.stemcell -eq "KEEP_ORIGIN")
             {
-                $stemcell_v = $d_origin_vers['stemcell']
+                $stemcell_v = $d_origin_vers['dynamicStemcellUrl']
             }
             
             if($dictvers.boshinit -eq "KEEP_ORIGIN")
@@ -223,7 +223,7 @@ Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [strin
     {
         $bosh_azure_cpi_sha1 = GetFileHash $bosh_azure_cpi_url
     }
-    if($stemcell_v -ne $d_origin_vers['stemcell'])
+    if($stemcell_v -ne $d_origin_vers['dynamicStemcellUrl'])
     {
         $stemcell_sha1 = GetFileHash $stemcell_url
     }
@@ -245,8 +245,8 @@ Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [strin
     $vars.$env_flag.boshReleaseSha1 = $bosh_release_sha1
     $vars.$env_flag.boshAzureCPIReleaseUrl = $vars.$env_flag.boshAzureCPIReleaseUrl.Replace($d_origin_vers['boshazurecpi'],$bosh_azure_cpi_v)
     $vars.$env_flag.boshAzureCPIReleaseSha1 = $bosh_azure_cpi_sha1        
-    $vars.$env_flag.stemcellUrl = $vars.$env_flag.stemcellUrl.Replace($d_origin_vers['stemcell'],$stemcell_v)        
-    $vars.$env_flag.stemcellSha1 = $stemcell_sha1
+    $vars.$env_flag.dynamicStemcellUrl = $vars.$env_flag.dynamicStemcellUrl.Replace($d_origin_vers['dynamicStemcellUrl'],$stemcell_v)        
+    $vars.$env_flag.dynamicStemcellSha1 = $stemcell_sha1
     $vars.$env_flag.boshInitUrl = $vars.$env_flag.boshInitUrl.Replace($d_origin_vers['boshinit'],$bosh_init_v)
         
     return $json_out
