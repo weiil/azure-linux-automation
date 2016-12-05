@@ -229,14 +229,21 @@ Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [strin
     }
 
     Write-Host "-$log_flag Bosh Release: $bosh_v"
-    #Write-Host " --URL: $bosh_release_url"
     Write-Host " --SHA1: $bosh_release_sha1"
+
     Write-Host "-$log_flag Bosh Azure CPI Release: $bosh_azure_cpi_v"
-    #Write-Host " --URL: $bosh_azure_cpi_url"
     Write-Host " --SHA1: $bosh_azure_cpi_sha1"
-    Write-Host "-$log_flag Stemcell: $stemcell_v"
-    #Write-Host " --URL: $stemcell_url"
+
+    Write-Host "-$log_flag Dynamic Stemcell: $stemcell_v"
     Write-Host " --SHA1: $stemcell_sha1"
+
+    if($vars.$env_flag.staticStemcellUrl -match "\d+.?\d+")
+    {
+        $static_stemcell_v = $Matches.0
+    }
+    Write-Host "-$log_flag Static Stemcell: $static_stemcell_v"
+    Write-Host " --SHA1: $vars.$env_flag.staticStemcellSha1"
+
     Write-Host "-$log_flag Bosh Init: $bosh_init_v"
 
     Write-Host "Update vars for $azureenv"
