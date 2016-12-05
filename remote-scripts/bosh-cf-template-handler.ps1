@@ -212,7 +212,7 @@ Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [strin
     $stemcell_url = $global_stemcell_url + "?v=" + $stemcell_v
     $bosh_release_sha1 = $vars.$env_flag.boshReleaseSha1
     $bosh_azure_cpi_sha1 = $vars.$env_flag.boshAzureCPIReleaseSha1
-    $stemcell_sha1 = $vars.$env_flag.stemcellSha1
+    $stemcell_sha1 = $vars.$env_flag.dynamicStemcellSha1
 
     # get sha1 just when need to
     if($bosh_v -ne $d_origin_vers['bosh'])
