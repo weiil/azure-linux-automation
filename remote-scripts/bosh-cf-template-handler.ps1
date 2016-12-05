@@ -242,7 +242,6 @@ Function UpdateDeployTemplateJson([psobject]$json_src, [string]$azureenv, [strin
         $static_stemcell_v = $Matches.0
     }
     Write-Host "-$log_flag Static Stemcell: $static_stemcell_v"
-    Write-Host " --SHA1: $vars.$env_flag.staticStemcellSha1"
 
     Write-Host "-$log_flag Bosh Init: $bosh_init_v"
 
