@@ -88,6 +88,14 @@ try
         LogMsg "UPDATED bosh cli version: $out"
     }
 
+    if($global:RunnerMode -eq "OnDemand" -and $env:BoshCLIVersion -eq "latest")
+    {
+        LogMsg "OnDemand mode, but request to update bosh cli to the latest"
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo gem install bosh_cli --no-ri --no-rdoc"
+        $out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -v"
+        LogMsg "UPDATED bosh cli version: $out"
+    }
+
     LogMsg "Install expect"
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install expect -y"
 	if($env:EnableCAT -eq $True)
