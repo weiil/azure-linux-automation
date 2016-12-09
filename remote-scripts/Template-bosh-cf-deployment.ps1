@@ -98,16 +98,27 @@ try
 
     LogMsg "Install expect"
     echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install expect -y"
-	if($env:EnableCAT -eq $True)
+
+    $testTasks=@()
+    if($env:AcceptanceTest -eq $true)
+    {
+        $testTasks += "acceptance test"
+    }
+
+    if($env:SmokeTest -eq $true)
+    {
+        $testTasks += "smoke test"
+    }
+
+	if($testTasks.Length -ne 0)
 	{
-		LogMsg "CAT enabled"
+		LogMsg "Enable testing(s) for cloud foundry"
 		$SharedNetworkResourceGroupName = "bosh-share-network"
 		$Domains = @{'AzureCloud'='mscfonline.info';'AzureChinaCloud'='mscfonline.site'}
 		$Environment = $parameters.environment
 		$DomainName = $Domains.$Environment
 		$old_cfip = $($rg_info_outputs.values | Where-Object {$_.value -match '^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$'}).value
 		$new_cfip = (Get-AzureRmPublicIpAddress -ResourceGroupName $SharedNetworkResourceGroupName -Name devbox-cf).IpAddress
-		$testTasks = ("acceptance test","smoke test")
 		$pattern = "Logs saved in \D(\S+)'"
 		foreach ($SetupType in $currentTestData.SubtestValues.split(","))
 		{
