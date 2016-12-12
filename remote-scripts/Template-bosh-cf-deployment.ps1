@@ -112,7 +112,7 @@ try
 
 	if($testTasks.Length -ne 0)
 	{
-		LogMsg "Enable testing(s) for cloud foundry"
+		LogMsg "Enable testing(s):$testTasks for cloud foundry"
 		$SharedNetworkResourceGroupName = "bosh-share-network"
 		$Domains = @{'AzureCloud'='mscfonline.info';'AzureChinaCloud'='mscfonline.site'}
 		$Environment = $parameters.environment
@@ -126,7 +126,7 @@ try
 			if($DeployedMultipleVMCF)
 			{
 				LogMsg "Remove deployed multiple-cf-on-azure"
-				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "echo yes | bosh delete deployment multiple-cf-on-azure"			
+				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "echo yes | bosh delete deployment multiple-vm-azure"
 			}
 			if($DeployedSingleVMCF)
 			{
