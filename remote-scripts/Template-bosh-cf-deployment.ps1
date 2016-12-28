@@ -38,9 +38,6 @@ try
     $jsonfile.parameters.clientID.value = $parameters.clientID
     $jsonfile.parameters.clientSecret.value = $parameters.clientSecret
     $jsonfile.parameters.autoDeployBosh.value = $parameters.autoDeployBosh
-
-    # add _artifactsLocation for PR#2796: https://github.com/Azure/azure-quickstart-templates/pull/2796 
-    $jsonfile.parameters | Add-Member -Name "_artifactsLocation" -Value @{value="https://raw.githubusercontent.com/gossion/azure-quickstart-templates/cf-v244/bosh-setup/"} -MemberType NoteProperty
     
     # save template parameter file
     $jsonfile | ConvertTo-Json | Out-File .\azuredeploy.parameters.json
@@ -359,8 +356,8 @@ expect "Enter a password to use in example_manifests/multiple-vm-cf.yml"
 }
 catch
 {
-    $ErrorMessage =  $_.Exception.Message
-    LogMsg "EXCEPTION : $ErrorMessage"   
+    $info = $_.InvocationInfo
+    "Line{0}, Col{1}, caught exception:{2}" -f $info.ScriptLineNumber,$info.OffsetInLine ,$_.Exception.Message
 }
 Finally
 {
