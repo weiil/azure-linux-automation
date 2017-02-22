@@ -76,10 +76,13 @@ Function GetLatest([string]$url)
 Function GetLatestBoshInit
 {
     $out = Invoke-RestMethod -Uri $bosh_init_artifacts -Method Get
-    $latest = $($out.ListBucketResult.Contents.Where({($_.Key -match 'linux-amd64') -and (-not $_.Key.contains('.md5'))}))[-1].Key
+    $all_releases = $($out.ListBucketResult.Contents.Where({($_.Key -match 'bosh-init') -and ($_.Key -match 'linux-amd64') -and (-not $_.Key.contains('.md5'))}))
+    $latest = $($all_releases | ForEach-Object {$_.Key.Split('-')[2]} | Sort-Object -Property {$_ -as [version]})[-1]
+    return $latest
+
     if($latest -match "\d+.?\d+.?\d+")
     {
-        return $Matches.0
+        return $latest
     }
     else
     {
