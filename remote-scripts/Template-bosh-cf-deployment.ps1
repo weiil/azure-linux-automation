@@ -189,11 +189,11 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 					{
 						if($parameters.environment -eq 'AzureCloud')
 						{
-							$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand acceptance_tests --keep-alive --download-logs --logs-dir /tmp/ && echo cat_test_pass || echo cat_test_fail; } | tee $SetupType-AcceptanceTest.log"						
+							$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand acceptance_tests --keep-alive --download-logs --logs-dir /home/azureuser && echo cat_test_pass || echo cat_test_fail; } | tee $SetupType-AcceptanceTest.log"
 						}
 						else
 						{
-							$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand acceptance_tests_internetless --keep-alive --download-logs --logs-dir /tmp && echo cat_test_pass || echo cat_test_fail; } | tee $SetupType-AcceptanceTest.log"
+							$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand acceptance_tests_internetless --keep-alive --download-logs --logs-dir /home/azureuser && echo cat_test_pass || echo cat_test_fail; } | tee $SetupType-AcceptanceTest.log"
 						}
 						echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:$SetupType-AcceptanceTest.log $LogDir\$SetupType-AcceptanceTest.log
                         $out = [String](Get-Content $LogDir\$SetupType-AcceptanceTest.log)
@@ -251,7 +251,7 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 					}
 					else
 					{
-						echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand smoke_tests --keep-alive --download-logs --logs-dir /tmp/ && echo smoke_test_pass || echo smoke_test_fail; } | tee $SetupType-SmokeTest.log"						
+						echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ bosh run errand smoke_tests --keep-alive --download-logs --logs-dir /home/azureuser && echo smoke_test_pass || echo smoke_test_fail; } | tee $SetupType-SmokeTest.log"
                         echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:$SetupType-SmokeTest.log $LogDir\$SetupType-SmokeTest.log
                         $out = [String](Get-Content $LogDir\$SetupType-SmokeTest.log)
 						if($out -match "smoke_test_pass")
