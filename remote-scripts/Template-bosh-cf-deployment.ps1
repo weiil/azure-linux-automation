@@ -144,9 +144,9 @@ try
 #!/usr/bin/expect
 set timeout -1
 spawn  /home/azureuser/tmprun.sh
-expect "Enter a password to use in example_manifests/$SetupType.yml" { send "\r" }
+expect "Enter a password(note: password should not contain special characters: @,' and so on) to use in example_manifests/$SetupType.yml" { send "\r" }
 expect "Type yes to continue" { send "yes\r" }
-expect "Enter a password to use in example_manifests/$SetupType.yml"
+expect "Enter a password(note: password should not contain special characters: @,' and so on) to use in example_manifests/$SetupType.yml"
 "@
 			LogMsg "generate test scripts"
 			$wrappersh | Out-File .\wrapper.sh -Encoding utf8
@@ -305,9 +305,9 @@ expect "Enter a password to use in example_manifests/$SetupType.yml"
 #!/usr/bin/expect
 set timeout -1
 spawn  /home/azureuser/tmprun.sh
-expect "Enter a password(note: password should not contain special characters: @,' and so on) to use in example_manifests/multiple-vm-cf.yml" { send "\r" }
+expect "Enter a password(note: password should not contain special characters: @,' and so on) to use in example_manifests/$SetupType.yml" { send "\r" }
 expect "Type yes to continue" { send "yes\r" }
-expect "Enter a password to use in example_manifests/multiple-vm-cf.yml"
+expect "Enter a password(note: password should not contain special characters: @,' and so on) to use in example_manifests/$SetupType.yml"
 "@
 		LogMsg "generate test scripts"
 		$wrappersh | Out-File .\wrapper.sh -Encoding utf8
