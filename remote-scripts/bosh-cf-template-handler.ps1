@@ -265,7 +265,7 @@ $json_template = Get-Content $file_path -Raw | ConvertFrom-Json
 $update_json_template = UpdateDeployTemplateJson $json_template $env $mode $d
 $($update_json_template | ConvertTo-Json -Depth 10).Replace("\u0027","'") | Out-File $new_file_path
 
-Move-Item $file_path $($file_path+'.bak')
-Move-Item $new_file_path $new_file_path.Replace('new-','')
+Move-Item $file_path $($file_path+'.bak') -Force
+Move-Item $new_file_path $new_file_path.Replace('new-','') -Force
 
 Write-Host 'DONE'

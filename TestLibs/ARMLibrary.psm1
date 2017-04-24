@@ -1436,57 +1436,70 @@ Function CreateRGDeploymentWithTempParameters([string]$RGName, $TemplateFile, $T
 
 Function CreateAllRGDeploymentsWithTempParameters($templateName, $location, $TemplateFile, $TemplateParameterFile)
 {
-    $resourceGroupCount = 0
-    $curtime = Get-Date
-    $isServiceDeployed = "False"
-    $retryDeployment = 0
-    $groupName = "ICA-RG-" + $templateName + "-" + $curtime.Month + "-" +  $curtime.Day  + "-" + $curtime.Hour + "-" + $curtime.Minute + "-" + $curtime.Second
+	$setupType = $templateName
+	$type = $xmlConfig.SelectSingleNode("/config/Azure/Deployment/$setupType")
+	if( (!$type) -or (!$EconomyMode) -or ( $EconomyMode -and ($xmlConfig.config.Azure.Deployment.$setupType.isDeployed -eq "NO")))
+	{
+		$resourceGroupCount = 0
+		$curtime = Get-Date
+		$isServiceDeployed = "False"
+		$retryDeployment = 0
+		$groupName = "ICA-RG-" + $templateName + "-" + $curtime.Month + "-" +  $curtime.Day  + "-" + $curtime.Hour + "-" + $curtime.Minute + "-" + $curtime.Second
 
-    while (($isServiceDeployed -eq "False") -and ($retryDeployment -lt 3))
-    {
-        LogMsg "Creating Resource Group : $groupName."
-        LogMsg "Verifying that Resource group name is not in use."
-        $isRGDeleted = DeleteResourceGroup -RGName $groupName
-        if ($isRGDeleted)
-        {    
-            $isServiceCreated = CreateResourceGroup -RGName $groupName -location $location
-            if ($isServiceCreated -eq "True")
-            {
-                $DeploymentStartTime = (Get-Date)
-				$CreateRGDeployments = CreateRGDeploymentWithTempParameters -RGName $groupName -location $location -TemplateFile $TemplateFile -TemplateParameterFile $TemplateParameterFile
-                $DeploymentEndTime = (Get-Date)
-                $DeploymentElapsedTime = $DeploymentEndTime - $DeploymentStartTime
-                if ( $CreateRGDeployments )
-                {
-                        $retValue = "True"
-                        $isServiceDeployed = "True"
-                        $resourceGroupCount = $resourceGroupCount + 1
-                        $deployedGroups = $groupName
-
-                }
-                else
-                {
-                    LogErr "Unable to Deploy one or more VM's"
-                    $retryDeployment = $retryDeployment + 1
-                    $retValue = "False"
-                    $isServiceDeployed = "False"
-                }
-            }
-            else
-            {
-                LogErr "Unable to create $groupName"
-                $retryDeployment = $retryDeployment + 1
-                $retValue = "False"
-                $isServiceDeployed = "False"
-            }
-        }    
-        else
-        {
-            LogErr "Unable to delete existing resource group - $groupName"
-            $retryDeployment = $retryDeployment + 1
-            $retValue = "False"
-            $isServiceDeployed = "False"
-        }
-    }
-    return $retValue, $deployedGroups, $resourceGroupCount, $DeploymentElapsedTime
+		while (($isServiceDeployed -eq "False") -and ($retryDeployment -lt 3))
+		{
+			LogMsg "Creating Resource Group : $groupName."
+			LogMsg "Verifying that Resource group name is not in use."
+			$isRGDeleted = DeleteResourceGroup -RGName $groupName
+			if ($isRGDeleted)
+			{    
+				$isServiceCreated = CreateResourceGroup -RGName $groupName -location $location
+				if ($isServiceCreated -eq "True")
+				{
+					$DeploymentStartTime = (Get-Date)
+					$CreateRGDeployments = CreateRGDeploymentWithTempParameters -RGName $groupName -location $location -TemplateFile $TemplateFile -TemplateParameterFile $TemplateParameterFile
+					$DeploymentEndTime = (Get-Date)
+					$DeploymentElapsedTime = $DeploymentEndTime - $DeploymentStartTime
+					if ( $CreateRGDeployments )
+					{
+							$retValue = "True"
+							$isServiceDeployed = "True"
+							$resourceGroupCount = $resourceGroupCount + 1
+							$deployedGroups = $groupName
+							Set-Variable -Name deployedGroups -Value $deployedGroups -Scope Global
+							if($type)
+							{
+								$xmlConfig.config.Azure.Deployment.$setupType.isDeployed = $retValue
+							}
+					}
+					else
+					{
+						LogErr "Unable to Deploy one or more VM's"
+						$retryDeployment = $retryDeployment + 1
+						$retValue = "False"
+						$isServiceDeployed = "False"
+					}
+				}
+				else
+				{
+					LogErr "Unable to create $groupName"
+					$retryDeployment = $retryDeployment + 1
+					$retValue = "False"
+					$isServiceDeployed = "False"
+				}
+			}    
+			else
+			{
+				LogErr "Unable to delete existing resource group - $groupName"
+				$retryDeployment = $retryDeployment + 1
+				$retValue = "False"
+				$isServiceDeployed = "False"
+			}
+		}
+	}
+	else
+	{
+		$retValue = $xmlConfig.config.Azure.Deployment.$setupType.isDeployed
+	}
+	return $retValue, $deployedGroups, $resourceGroupCount, $DeploymentElapsedTime
 }

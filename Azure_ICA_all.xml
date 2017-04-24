@@ -2970,6 +2970,9 @@
 					</VirtualMachine>					
 				</HostedService>
 			</S2C1>			
+			<CFScenario>
+				<isDeployed>NO</isDeployed>
+			</CFScenario>
 		</Deployment>
 		
 
@@ -5041,6 +5044,81 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_005</TestID>
     </test>
+    <test>
+      <testName>Template-bosh-multiple-nics-single-vm-cf</testName>
+      <testScript>
+      </testScript>
+      <testScriptPs1>Template-bosh-multiple-nics-single-vm-cf.ps1</testScriptPs1>
+      <files>
+      </files>
+      <setupType>CFScenario</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_006</TestID>
+    </test>
+    <test>
+      <testName>Template-bosh-managed-disk-single-vm-cf</testName>
+      <testScript>
+      </testScript>
+      <testScriptPs1>Template-bosh-managed-disk-single-vm-cf.ps1</testScriptPs1>
+      <files>
+      </files>
+      <setupType>CFScenario</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_007</TestID>
+    </test>
+    <test>
+      <testName>Template-bosh-separate-network-single-vm-cf</testName>
+      <testScript>
+      </testScript>
+      <testScriptPs1>Template-bosh-separate-network-single-vm-cf.ps1</testScriptPs1>
+      <files>
+      </files>
+      <setupType>CFScenario</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_008</TestID>
+    </test>	
 
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
@@ -6099,7 +6177,18 @@
 				<Name>Template-bosh-cf-perf</Name>
 			</test>
 		</Cycle>
-
+	    <Cycle>
+			<cycleName>CF-SCENARIO</cycleName>
+			<test>
+				<Name>Template-bosh-multiple-nics-single-vm-cf</Name>
+			</test>
+			<test>
+				<Name>Template-bosh-separate-network-single-vm-cf</Name>
+			</test>
+			<test>
+				<Name>Template-bosh-managed-disk-single-vm-cf</Name>
+			</test>
+	    </Cycle>
 		<Cycle>
 			<cycleName>DEBUG</cycleName>
 			<!--You can add individual tests here and run them for debugging purpose. You can also add new cycles. -->
