@@ -146,6 +146,8 @@ expect "Enter a password(note: password should not contain special characters: @
 				if($nics.Length -eq 3)
 				{
 					$testResult = "PASS"
+                    LogMsg "Test PASS, remove deployment multiple-nics-cf"
+                    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "echo yes | bosh delete deployment multiple-nics-cf"
 				}
 			}
 		}

@@ -150,6 +150,8 @@ expect "Enter a password(note: password should not contain special characters: @
 					if($managedDisks.Length -gt 0)
 					{
 						$testResult = "PASS"
+                        LogMsg "Test PASS, remove deployment managed-disk-cf"
+                        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "echo yes | bosh delete deployment managed-disk-cf"
 					}
 				}
 				else

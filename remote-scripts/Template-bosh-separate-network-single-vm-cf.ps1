@@ -143,6 +143,8 @@ expect "Enter a password(note: password should not contain special characters: @
 				if($publicIPAddressInfo -match $SharedNetworkResourceGroupName)
 				{
 					$testResult = "PASS"
+                    LogMsg "Test PASS, remove deployment separate-network-cf"
+                    echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "echo yes | bosh delete deployment separate-network-cf"
 				}
 			}
 		}
