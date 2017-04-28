@@ -5119,6 +5119,56 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_008</TestID>
     </test>	
+    <test>
+      <testName>Template-bosh-cf-deploy-for-enterprise</testName>
+      <testScript>
+      </testScript>
+      <testScriptPs1>Template-bosh-cf-deploy-for-enterprise.ps1</testScriptPs1>
+      <files>
+      </files>
+      <setupType>CFScenario</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_009</TestID>
+    </test>	
+    <test>
+      <testName>Template-bosh-cf-multiple-haproxy</testName>
+      <testScript>
+      </testScript>
+      <testScriptPs1>Template-bosh-cf-multiple-haproxy.ps1</testScriptPs1>
+      <files>
+      </files>
+      <setupType>CFScenario</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_010</TestID>
+    </test>	
 
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
@@ -6179,6 +6229,12 @@
 		</Cycle>
 	    <Cycle>
 			<cycleName>CF-SCENARIO</cycleName>
+			<test>
+				<Name>Template-bosh-cf-deploy-for-enterprise</Name>
+			</test>
+			<test>
+				<Name>Template-bosh-cf-multiple-haproxy</Name>
+			</test>
 			<test>
 				<Name>Template-bosh-multiple-nics-single-vm-cf</Name>
 			</test>
