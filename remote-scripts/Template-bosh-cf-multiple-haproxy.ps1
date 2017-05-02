@@ -121,10 +121,10 @@ expect "Enter a password(note: password should not contain special characters: @
 		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x wrapper.sh"
 		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x tmprun.sh"
         # install nodejs
-        #echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -"
-        #echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install -y nodejs"
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -"
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo apt-get install -y nodejs"
         # install azure-cli via npm
-        #echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo npm install -g azure-cli"
+        echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo npm install -g azure-cli"
         
         # azure login with sp
         $tenant = $parameters.tenantID
@@ -176,6 +176,7 @@ expect "Enter a password(note: password should not contain special characters: @
 				if($postgres_z1_running_count -eq 2)
 				{
 					$testResult_bosh_deployment_vms = "PASS"
+                    LogMsg "[PASS][deployment] Expect 2 postgres vm instances in deployment are running and actually $postgres_z1_running_count instance(s) running."
 				}
 				else
 				{
@@ -220,6 +221,7 @@ expect "Enter a password(note: password should not contain special characters: @
 					if($check -eq 2)
 					{
 						$testResult_availability_set = "PASS" 
+                        LogMsg "[PASS][availability set] Expect 2 instances are running and actually $check vm instance(s) running."
 					}
 					else 
 					{	
@@ -265,6 +267,7 @@ expect "Enter a password(note: password should not contain special characters: @
                     if($check_vm_in_lb_binding -eq 2 -and $vm_id_list.count -eq 2)
                     {
                         $testResult_load_balancer = 'PASS'
+                        LogMsg "[PASS][load balancer] Expect the associated network interfaces are belong to VMs in availability set and actually yes."
                     }
                     else
                     {

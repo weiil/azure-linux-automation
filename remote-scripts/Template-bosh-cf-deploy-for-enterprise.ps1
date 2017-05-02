@@ -150,6 +150,7 @@ expect "Enter a password(note: password should not contain special characters: @
 					if($mytestjob_z1_running_count -eq 1)
 					{
 						$testResult_bosh_deployment_vms = "PASS"
+						LogMsg "[PASS][deployment] Expect 1 mytestjob vm instance in deployment is running and actually $mytestjob_z1_running_count instance(s)."					
 					}
 					else 
 					{
@@ -211,6 +212,7 @@ expect "Enter a password(note: password should not contain special characters: @
 					if($check -eq 2)
 					{
 						$testResult_availability_set = "PASS" 
+						LogMsg "[PASS][availability set] Expect 2 instances are running and actually $check vm instance(s) running."
 					}
 					else 
 					{	
@@ -250,6 +252,7 @@ expect "Enter a password(note: password should not contain special characters: @
 						if($postgres_z1_using_orginal_storage)
 						{
 							$testResult_multiple_storage_account = "PASS"
+							LogMsg "[PASS][storage account] Expect postgres_z1 instances use the original storage and actually yes."
 						}
 						else 
 						{
