@@ -112,7 +112,6 @@ def update_manifest(out):
         out['jobs'][0]['networks'][0]['static_ips'][0] = '10.0.16.9'
         out['jobs'][0]['networks'][0]['static_ips'].append('10.0.16.19')
 
-        return out
     
     if (manifest_file_name == 'multiple-haproxy-single-vm-cf.yml'):
         out['name'] = 'multiple-haproxy'
@@ -133,7 +132,7 @@ def update_manifest(out):
         out['jobs'][0]['instances'] = 2
         out['jobs'][0]['networks'][0]['static_ips'].append('10.0.16.15')
 
-        return out
+    return out
 
 
 def generate_manifest(obj_manifest):
