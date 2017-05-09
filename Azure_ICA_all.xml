@@ -4975,7 +4975,7 @@
         <tenantID></tenantID>
         <clientID></clientID>
         <clientSecret></clientSecret>
-        <autoDeployBosh>enabled</autoDeployBosh>
+        <autoDeployBosh>disabled</autoDeployBosh>
         <cpiUrl></cpiUrl>
         <cpiSha1></cpiSha1>
         <stemcellUrl></stemcellUrl>

@@ -56,12 +56,13 @@ try
     if ($isDeployed[0] -eq $True)
     {
 
-        $testResult_deploy_bosh = "PASS"
+        $testResult_deploy_infrastructure = "PASS"
+		LogMsg "deploy azure resouces for infrastructure successfully."
     }
     else
     {
-        $testResult_deploy_bosh = "Failed"
-        throw 'deploy resouces with error, please check.'
+        $testResult_deploy_infrastructure = "Failed"
+        throw 'deploy azure resouces for infrastructure with error, please check.'
     }
 
     # connect to the devbox then deploy multi-vms cf
@@ -107,15 +108,46 @@ try
         $testTasks += "smoke test"
     }
 
+	# configure BOSH
+	$Environment = $parameters.environment
+	# for Azure global, use PowerDns on BOSH VM as dns server
+	if ($Environment -eq "AzureCloud")
+	{
+		# upload 
+		echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\config_powerdns_on_azurecloud.py ${dep_ssh_info}:
+		# backup
+		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "cp bosh.yml bosh.yml.origin"
+		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "cp example_manifests/multiple-vm-cf.yml  example_manifests/multiple-vm-cf.yml.origin"
+		# execute
+		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "python config_powerdns_on_azurecloud.py bosh.yml example_manifests/multiple-vm-cf.yml"
+		# inject the records
+		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/b4c75c5c3ee5644a45e6ace8f6bce5e7927fd1f8/bosh-setup/scripts/inject_xip_io_records.py"
+		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "python inject_xip_io_records.py bosh.yml settings"
+	}
+	
+	# deploy BOSH
+	echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "{ ./deploy_bosh.sh && echo bosh_deploy_ok || echo bosh_deploy_fail; } | tee deploy-BOSH.log"
+	$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "grep 'bosh_deploy_ok' deploy-BOSH.log | wc -l"
+	if ($out -eq '1')
+	{
+		$testResult_deploy_bosh = "PASS"
+		LogMsg "deploy BOSH successfully."
+	}
+	else
+	{
+		$testResult_deploy_bosh = "Failed"
+		throw "deploy BOSH failed, check details from deploy-BOSH.log."
+	}
+
 	if($testTasks.Length -ne 0)
 	{
 		LogMsg "Enable testing(s):$testTasks for cloud foundry"
-		$SharedNetworkResourceGroupName = "bosh-share-network"
-		$Domains = @{'AzureCloud'='mscfonline.info';'AzureChinaCloud'='mscfonline.site'}
-		$Environment = $parameters.environment
-		$DomainName = $Domains.$Environment
-		$old_cfip = $($rg_info_outputs.values | Where-Object {$_.value -match '^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$'}).value
-		$new_cfip = (Get-AzureRmPublicIpAddress -ResourceGroupName $SharedNetworkResourceGroupName -Name devbox-cf).IpAddress
+		#$SharedNetworkResourceGroupName = "bosh-share-network"
+		#$Domains = @{'AzureCloud'='mscfonline.info';'AzureChinaCloud'='mscfonline.site'}
+		#$Environment = $parameters.environment
+		#$DomainName = $Domains.$Environment
+		#$old_cfip = $($rg_info_outputs.values | Where-Object {$_.value -match '^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$'}).value
+		#$new_cfip = (Get-AzureRmPublicIpAddress -ResourceGroupName $SharedNetworkResourceGroupName -Name devbox-cf).IpAddress
 		$pattern = "Logs saved in \D(\S+)'"
 		foreach ($SetupType in $currentTestData.SubtestValues.split(","))
 		{
@@ -123,18 +155,18 @@ try
 			if($DeployedMultipleVMCF)
 			{
 				LogMsg "Remove deployed multiple-vm-azure"
-				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "echo yes | bosh delete deployment multiple-vm-azure"
+				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -n delete deployment multiple-vm-azure"
 			}
 			if($DeployedSingleVMCF)
 			{
 				LogMsg "Remove deployed single-vm-cf-on-azure"
-				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "echo yes | bosh delete deployment single-vm-cf-on-azure"		
+				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -n delete deployment single-vm-cf-on-azure"		
 			}
 			#update yml file
-			LogMsg "Update file $SetupType.yml"
-			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i '/type: vip$/a\  cloud_properties:\n    resource_group_name: $SharedNetworkResourceGroupName' example_manifests/$SetupType.yml"
-			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i 's/$old_cfip/$new_cfip/g' example_manifests/$SetupType.yml"
-			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i 's/$new_cfip.xip.io/$DomainName/g' example_manifests/$SetupType.yml"
+			#LogMsg "Update file $SetupType.yml"
+			#echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i '/type: vip$/a\  cloud_properties:\n    resource_group_name: $SharedNetworkResourceGroupName' example_manifests/$SetupType.yml"
+			#echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i 's/$old_cfip/$new_cfip/g' example_manifests/$SetupType.yml"
+			#echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i 's/$new_cfip.xip.io/$DomainName/g' example_manifests/$SetupType.yml"
 			$tmprunsh = @"
 #!/bin/bash
 { /home/azureuser/deploy_cloudfoundry.sh example_manifests/$SetupType.yml && echo cf_deploy_ok || echo cf_deploy_fail; } | tee deploy-$SetupType.log
@@ -342,7 +374,7 @@ expect "Enter a password(note: password should not contain special characters: @
 			LogMsg "deploy multi vms cf failed, please ssh to devbox and check details from deploy_cloudfoundry.log"
 		}
 
-		if ($testResult_deploy_bosh -eq "PASS" -and $testResult_deploy_multi_vms_cf -eq "PASS")
+		if ($testResult_deploy_infrastructure -eq "PASS" -and $testResult_deploy_bosh -eq "PASS" -and $testResult_deploy_multi_vms_cf -eq "PASS")
 		{
 			$testResult = "PASS"
 		}
@@ -368,12 +400,12 @@ catch
 Finally
 {
     # Dissociate shared PublicIPAddress for next job use
-	$networkInterface = Get-AzureRmNetworkInterface -ResourceGroupName $isDeployed[1]  | where {$_.IpConfigurations[0].PublicIpAddress.Id -match $SharedNetworkResourceGroupName}
-	if($networkInterface)
-	{
-		$networkInterface.IpConfigurations[0].PublicIpAddress = $null
-		Set-AzureRmNetworkInterface -NetworkInterface $networkInterface
-	}
+	#$networkInterface = Get-AzureRmNetworkInterface -ResourceGroupName $isDeployed[1]  | where {$_.IpConfigurations[0].PublicIpAddress.Id -match $SharedNetworkResourceGroupName}
+	#if($networkInterface)
+	#{
+	#	$networkInterface.IpConfigurations[0].PublicIpAddress = $null
+	#	Set-AzureRmNetworkInterface -NetworkInterface $networkInterface
+	#}
 
     $metaData = ""
     if (!$testResult)
