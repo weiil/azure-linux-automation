@@ -120,10 +120,6 @@ try
 		# change
 		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo sed -i 's/listen_address: 127.0.0.1/listen_address: 10.0.0.4/g' bosh.yml"
 		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo sed -i 's/host: 127.0.0.1/host: 10.0.0.4/g' bosh.yml"
-
-		# inject the records
-		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/b4c75c5c3ee5644a45e6ace8f6bce5e7927fd1f8/bosh-setup/scripts/inject_xip_io_records.py"
-		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo python inject_xip_io_records.py bosh.yml settings"
 	}
 	
 	# deploy BOSH
@@ -133,6 +129,10 @@ try
 	{
 		$testResult_deploy_bosh = "PASS"
 		LogMsg "deploy BOSH successfully."
+
+		# inject the records
+		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/b4c75c5c3ee5644a45e6ace8f6bce5e7927fd1f8/bosh-setup/scripts/inject_xip_io_records.py"
+		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo python inject_xip_io_records.py bosh.yml settings"
 	}
 	else
 	{
