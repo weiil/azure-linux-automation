@@ -50,12 +50,10 @@ try
         LogMsg "fail to save azuredeploy.parameters.json"
     }
 
-
     $isDeployed = CreateAllRGDeploymentsWithTempParameters -templateName $templateName -location $location -TemplateFile ..\azure-quickstart-templates\bosh-setup\azuredeploy.json  -TemplateParameterFile .\azuredeploy.parameters.json
 
     if ($isDeployed[0] -eq $True)
     {
-
         $testResult_deploy_infrastructure = "PASS"
 		LogMsg "deploy azure resouces for infrastructure successfully."
     }
@@ -143,12 +141,6 @@ try
 	if($testTasks.Length -ne 0)
 	{
 		LogMsg "Enable testing(s):$testTasks for cloud foundry"
-		#$SharedNetworkResourceGroupName = "bosh-share-network"
-		#$Domains = @{'AzureCloud'='mscfonline.info';'AzureChinaCloud'='mscfonline.site'}
-		#$Environment = $parameters.environment
-		#$DomainName = $Domains.$Environment
-		#$old_cfip = $($rg_info_outputs.values | Where-Object {$_.value -match '^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$'}).value
-		#$new_cfip = (Get-AzureRmPublicIpAddress -ResourceGroupName $SharedNetworkResourceGroupName -Name devbox-cf).IpAddress
 		$pattern = "Logs saved in \D(\S+)'"
 		foreach ($SetupType in $currentTestData.SubtestValues.split(","))
 		{
@@ -163,11 +155,7 @@ try
 				LogMsg "Remove deployed single-vm-cf-on-azure"
 				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "bosh -n delete deployment single-vm-cf-on-azure"		
 			}
-			#update yml file
-			#LogMsg "Update file $SetupType.yml"
-			#echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i '/type: vip$/a\  cloud_properties:\n    resource_group_name: $SharedNetworkResourceGroupName' example_manifests/$SetupType.yml"
-			#echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i 's/$old_cfip/$new_cfip/g' example_manifests/$SetupType.yml"
-			#echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sed -i 's/$new_cfip.xip.io/$DomainName/g' example_manifests/$SetupType.yml"
+			
 			$tmprunsh = @"
 #!/bin/bash
 { /home/azureuser/deploy_cloudfoundry.sh example_manifests/$SetupType.yml && echo cf_deploy_ok || echo cf_deploy_fail; } | tee deploy-$SetupType.log
@@ -198,7 +186,7 @@ expect "Enter a password(note: password should not contain special characters: @
 
 			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./wrapper.sh"
             echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:deploy-$SetupType.log $LogDir\deploy-$SetupType.log
-			#$out = echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./deploy_cloudfoundry.sh example_manifests/$SetupType.yml && echo cf_deploy_ok || echo cf_deploy_fail"
+			
 			$out = [String](Get-Content $LogDir\deploy-$SetupType.log)
 			if($SetupType -eq 'multiple-vm-cf')
 			{
@@ -404,14 +392,6 @@ catch
 }
 Finally
 {
-    # Dissociate shared PublicIPAddress for next job use
-	#$networkInterface = Get-AzureRmNetworkInterface -ResourceGroupName $isDeployed[1]  | where {$_.IpConfigurations[0].PublicIpAddress.Id -match $SharedNetworkResourceGroupName}
-	#if($networkInterface)
-	#{
-	#	$networkInterface.IpConfigurations[0].PublicIpAddress = $null
-	#	Set-AzureRmNetworkInterface -NetworkInterface $networkInterface
-	#}
-
     $metaData = ""
     if (!$testResult)
     {
