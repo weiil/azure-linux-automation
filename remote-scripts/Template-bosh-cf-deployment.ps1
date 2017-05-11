@@ -128,9 +128,12 @@ try
 		$testResult_deploy_bosh = "PASS"
 		LogMsg "deploy BOSH successfully."
 
-		# inject the records
-		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/b4c75c5c3ee5644a45e6ace8f6bce5e7927fd1f8/bosh-setup/scripts/inject_xip_io_records.py"
-		echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo python inject_xip_io_records.py bosh.yml settings"
+		# inject the records if on Azure Global
+		if ($Environment -eq "AzureCloud")
+		{
+			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/b4c75c5c3ee5644a45e6ace8f6bce5e7927fd1f8/bosh-setup/scripts/inject_xip_io_records.py"
+			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "sudo python inject_xip_io_records.py bosh.yml settings"
+		}
 	}
 	else
 	{
@@ -177,12 +180,16 @@ expect "Enter a password(note: password should not contain special characters: @
 			LogMsg "upload test scripts"
 			echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\wrapper.sh ${dep_ssh_info}:
 			echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\tmprun.sh ${dep_ssh_info}:
-			echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\remote-scripts\config_powerdns_on_azurecloud.py ${dep_ssh_info}:
+
 			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x wrapper.sh"
 			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "chmod a+x tmprun.sh"
 
-			# cf use powerdns on bosh vm as dns server
-			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "python config_powerdns_on_azurecloud.py example_manifests/multiple-vm-cf.yml"
+			# cf use powerdns on bosh vm as dns server if on Azure global
+			if($Environment -eq "AzureCloud")
+			{
+				echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port .\remote-scripts\config_powerdns_on_azurecloud.py ${dep_ssh_info}:
+				echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "python config_powerdns_on_azurecloud.py example_manifests/multiple-vm-cf.yml"
+			}
 
 			echo y | .\tools\plink -i .\ssh\$sshKey -P $port $dep_ssh_info "./wrapper.sh"
             echo y | .\tools\pscp -i .\ssh\$sshKey -q -P $port ${dep_ssh_info}:deploy-$SetupType.log $LogDir\deploy-$SetupType.log
