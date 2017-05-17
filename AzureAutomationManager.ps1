@@ -109,19 +109,15 @@ try
 
     if ($UseAzureResourceManager)
     {
-		#Switch-AzureMode -Name AzureResourceManager
 		Set-Variable -Name UseAzureResourceManager -Value $true -Scope Global
-		$selectSubscription = Select-AzureSubscription -SubscriptionId $AzureSetup.SubscriptionID
-		$selectedSubscription = Get-AzureSubscription | where { $_.IsCurrent -eq "True" }
+		$selectedSubscription = Get-AzureRMSubscription | where { $_.State -eq "Enabled" }
 		LogMsg "SubscriptionName       : $($selectedSubscription.SubscriptionName)"
 		LogMsg "SubscriptionId         : $($selectedSubscription.SubscriptionId)"
-		LogMsg "User                   : $($selectedSubscription.DefaultAccount)"
-		#LogMsg "ServiceEndpoint        : $($selectedSubscription.DefaultAccount)"
+		LogMsg "TenantId               : $($selectedSubscription.TenantId)"
 		LogMsg "CurrentStorageAccount  : $($AzureSetup.ARMStorageAccount)"
     }
     else
     {
-        #Switch-AzureMode -Name AzureServiceManagement
         Set-Variable -Name UseAzureResourceManager -Value $false -Scope Global
         LogMsg "Setting Azure Subscription ..."
 		$out = SetSubscription -subscriptionID $AzureSetup.SubscriptionID -subscriptionName $AzureSetup.SubscriptionName -certificateThumbprint $AzureSetup.CertificateThumbprint -managementEndpoint $AzureSetup.ManagementEndpoint -storageAccount $AzureSetup.StorageAccount -environment $AzureSetup.Environment

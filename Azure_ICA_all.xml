@@ -5169,7 +5169,29 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_010</TestID>
     </test>	
-
+    <test>
+      <testName>CPI-NETWORK-RESOURCE-GROUP-NAME</testName>
+      <testScript>CPI-NETWORK-RESOURCE-GROUP-NAME.py</testScript>
+      <testScriptPs1>CPI-NETWORK-RESOURCE-GROUP-NAME.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-NETWORK-RESOURCE-GROUP-NAME.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>CFScenario</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_011</TestID>
+    </test>
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
 			<testName>ICA-TERASORT-BENCHMARK-TEST</testName>
@@ -6240,6 +6262,9 @@
 			</test>
 			<test>
 				<Name>Template-bosh-separate-network-single-vm-cf</Name>
+			</test>
+			<test>
+				<Name>CPI-NETWORK-RESOURCE-GROUP-NAME</Name>
 			</test>
 			<test>
 				<Name>Template-bosh-managed-disk-single-vm-cf</Name>
