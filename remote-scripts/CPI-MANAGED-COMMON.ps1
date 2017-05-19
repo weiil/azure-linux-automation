@@ -95,7 +95,7 @@ try
     }
 	
 	LogMsg "Executing : $($currentTestData.testScript)"
-	RunLinuxCmd -username $user -password $password -ip $ip -port $port -command "python $($currentTestData.testScript) example_manifests/single-vm-cf.yml cpi-network-rg-single-vm-cf.yml $new_cfip" -runMaxAllowedTime 3600 -usePrivateKey
+	RunLinuxCmd -username $user -password $password -ip $ip -port $port -command "python $($currentTestData.testScript)" -runMaxAllowedTime 3600 -usePrivateKey
 	RunLinuxCmd -username $user -password $password -ip $ip -port $port -command "mv Runtime.log $($currentTestData.testScript).log" -usePrivateKey
 	RemoteCopy -download -downloadFrom $ip -files "/home/$user/deployCF.log, /home/$user/state.txt, /home/$user/Summary.log, /home/$user/$($currentTestData.testScript).log" -downloadTo $LogDir -port $port -username $user -password $password -usePrivateKey
 	$testResult = Get-Content $LogDir\Summary.log
