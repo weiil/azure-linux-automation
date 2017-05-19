@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from azuremodules import *
+import random
 
 def create_publicIP_resource(resource_group_name):
     data = load_jsonfile('settings')
@@ -57,6 +58,6 @@ def RunTest():
 source_manifest_name = 'example_manifests/single-vm-cf.yml'
 destination_manifest_name = 'cpi-vip-rg-single-vm-cf.yml'
 cf_deployment_name = 'separate-network-cf'
-temp_resource_group_name = 'temp-network-rg'
+temp_resource_group_name = 'testrg-%s' % random.randint(1,100)
 
 RunTest()
