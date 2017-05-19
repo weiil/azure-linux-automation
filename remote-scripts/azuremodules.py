@@ -15,11 +15,26 @@ import array
 import linecache
 import sys
 import re
+import yaml
+from copy import deepcopy
+from pprint import pprint
 
 try:
     import commands
 except ImportError:
     import subprocess as commands
+
+try:
+    import json
+except ImportError:
+    os.system("sudo pip install simplejson")
+    import json
+
+try:
+    import pexpect
+except ImportError:
+    os.system("sudo pip install pexpect")
+    import pexpect
 
 py_ver_str = sys.version
 print(sys.version)
@@ -47,11 +62,95 @@ ResultScreen.setFormatter(ResultFormatter)
 #ResultLog.addHandler(ResultScreen)
 ResultLog.addHandler(WResultLog)
 
+def load_manifest(file_name):
+    with open(file_name) as f:
+        out = yaml.load(f)
+    return out
+
+def load_jsonfile(file_name):
+    with open(file_name) as f:
+        json_data = json.load(f)
+    return json_data
+	
+def set_azure_subscription(config_file):
+    data = load_jsonfile(config_file)
+    client_id = data['CLIENT_ID']
+    client_secret = data['CLIENT_SECRET']
+    tenant_id = data['TENANT_ID']
+    cmd = "az login --service-principal --tenant %s --username %s --password %s" % (tenant_id, client_id, client_secret)
+    Run(cmd)
+
+	
+def remove_unnessary_jobs(obj_manifest):
+    jobs = obj_manifest['jobs']
+    for k, v in enumerate(jobs):
+        if v['name'] == 'postgres_z1':
+            return [v]
+
+def remove_unnessary_releases(obj_manifest):
+    releases = obj_manifest['releases']
+    for k, v in enumerate(releases):
+        if v['name'] == 'cf':
+            return [v]
+
+def generate_manifest(manifest_file_name, obj_manifest):
+    with open(manifest_file_name,'w') as f:
+        yaml.dump(obj_manifest,f)
+
+def str_match(match_str, file_name):
+    with open(file_name) as f:
+        for line in f:
+            if re.search(match_str ,line):
+                return True
+    return False
+
+
+def InstallAzureCli():
+    Run("echo 'deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main' | sudo tee /etc/apt/sources.list.d/azure-cli.list")
+    Run("sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893")
+    AptgetPackageInstall("apt-transport-https")
+    UpdateRepos("ubuntu")
+    if AptgetPackageInstall("azure-cli"):
+        return True
+    else:
+        return False
+
+def DeployCF(cf_manifest_file):
+        RunLog.info("Interactive deployment CF")
+        cmd = "/bin/bash -c '{ /home/azureuser/deploy_cloudfoundry.sh %s && echo cf_deploy_ok || echo cf_deploy_fail; } | tee deployCF.log'" % cf_manifest_file
+        RunLog.info("run command: %s" % cmd)
+        child = pexpect.spawn(cmd)
+        index = child.expect(["Enter a password(?i)", pexpect.EOF, pexpect.TIMEOUT])
+        if(index == 0):
+                child.sendline('\\n')
+                RunLog.info("type Enter key")
+                index = child.expect(["Type yes to continue", pexpect.EOF, pexpect.TIMEOUT])
+                if(index == 0):
+                        child.sendline('yes')
+                        RunLog.info("type yes")
+                        while True:
+                                index = child.expect([pexpect.TIMEOUT, pexpect.EOF])
+                                if(index == 0):
+                                        pass
+                                else:
+                                        if str_match('cf_deploy_ok','deployCF.log'):
+                                            RunLog.info("CF deploys successfully.\n")
+                                            return True
+                                        else:
+                                            RunLog.error("CF failed to deploy unexpectly.\n")
+                                            return False
+                else:
+                        RunLog.error("CF failed to deploy in the second step.\n")
+                        return False
+        else:
+                RunLog.error("CF failed to deploy in the first step.\n")
+                return False
+
 def UpdateRepos(current_distro):
     RunLog.info ("\nUpdating the repositoriy information...")
     if (current_distro.find("ubuntu") != -1) or (current_distro.find("debian") != -1): 
         #method 'RunUpdate': fix deadlock when using stdout=PIPE and/or stderr=PIPE and the child process generates enough output to a pipe
-        RunUpdate("apt-get update")
+        RunUpdate("sudo apt-get update")
     elif (current_distro.find("rhel") != -1) or (current_distro.find("Oracle") != -1) or (current_distro.find('centos') != -1):
         RunUpdate("yum -y update")
     elif (current_distro.find("opensuse") != -1) or (current_distro.find("SUSE") != -1) or (current_distro.find("sles") != -1):
@@ -285,7 +384,7 @@ def AptgetPackageInstall(package,dbpasswd = "root"):
 		cmds = ("export DEBIAN_FRONTEND=noninteractive","echo mysql-server mysql-server/root_password select " + dbpasswd + " | debconf-set-selections", "echo mysql-server mysql-server/root_password_again select " + dbpasswd  + "| debconf-set-selections", "apt-get install -y mysql-server")
 		output = ExecMultiCmdsLocalSudo(cmds)
 	else:
-		cmds = ("export DEBIAN_FRONTEND=noninteractive", "apt-get install -y "+package)
+		cmds = ("export DEBIAN_FRONTEND=noninteractive", "sudo apt-get install -y "+package)
 		output = ExecMultiCmdsLocalSudo(cmds)
 	
 	outputlist = re.split("\n", output)	
