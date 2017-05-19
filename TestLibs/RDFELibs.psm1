@@ -2071,18 +2071,32 @@ Function RemoteCopy($uploadTo, $downloadFrom, $downloadTo, $port, $files, $usern
 	}
 }
 
-Function WrapperCommandsToFile([string] $username,[string] $password,[string] $ip,[string] $command, [int] $port)
+Function WrapperCommandsToFile([string] $username,[string] $password,[string] $ip,[string] $command, [int] $port, [switch]$usePrivateKey)
 {
 	$command | out-file -encoding ASCII -filepath runtest.sh
-	RemoteCopy -upload -uploadTo $ip -username $username -port $port -password $password -files '.\runtest.sh'
+	if($usePrivateKey)
+	{
+		RemoteCopy -upload -uploadTo $ip -username $username -port $port -password $password -files '.\runtest.sh' -usePrivateKey
+	}
+	else
+	{
+		RemoteCopy -upload -uploadTo $ip -username $username -port $port -password $password -files '.\runtest.sh'
+	}
 	del runtest.sh
 }
 
-Function RunLinuxCmd([string] $username,[string] $password,[string] $ip,[string] $command, [int] $port, [switch]$runAsSudo, [Boolean]$WriteHostOnly, [Boolean]$NoLogsPlease, [switch]$ignoreLinuxExitCode, [int]$runMaxAllowedTime = 300, [switch]$RunInBackGround)
+Function RunLinuxCmd([string] $username,[string] $password,[string] $ip,[string] $command, [int] $port, [switch]$runAsSudo, [Boolean]$WriteHostOnly, [Boolean]$NoLogsPlease, [switch]$ignoreLinuxExitCode, [int]$runMaxAllowedTime = 300, [switch]$RunInBackGround, [switch]$usePrivateKey)
 {
 	if ($detectedDistro -ne "COREOS" )
 	{
-		WrapperCommandsToFile $username $password $ip $command $port
+		if($usePrivateKey)
+		{
+			WrapperCommandsToFile -username $username - password $password  -ip $ip -command $command -port $port -usePrivateKey
+		}
+		else
+		{
+			WrapperCommandsToFile -username $username - password $password  -ip $ip -command $command -port $port
+		}
 	}
 	$randomFileName = [System.IO.Path]::GetRandomFileName()
 	$maxRetryCount = 10
@@ -2117,7 +2131,14 @@ Function RunLinuxCmd([string] $username,[string] $password,[string] $ip,[string]
 			$logCommand = "`"$command`""
 		}
 	}
-	LogMsg ".\tools\plink.exe -t -pw $password -P $port $username@$ip $logCommand"
+	if($usePrivateKey)
+	{
+		LogMsg ".\tools\plink.exe -t -i .\ssh\$sshKey -P $port $username@$ip $logCommand"
+	}
+	else
+	{
+		LogMsg ".\tools\plink.exe -t -pw $password -P $port $username@$ip $logCommand"
+	}
 	$returnCode = 1
 	$attemptswt = 0
 	$attemptswot = 0
@@ -2129,27 +2150,31 @@ Function RunLinuxCmd([string] $username,[string] $password,[string] $ip,[string]
 		if ($runwithoutt -or $attemptswt -eq $maxRetryCount)
 		{
 			Set-Variable -Name runwithoutt -Value true -Scope Global
-			$attemptswot +=1
-			$runLinuxCmdJob = Start-Job -ScriptBlock `
-			{ `
-				$username = $args[1]; $password = $args[2]; $ip = $args[3]; $port = $args[4]; $jcommand = $args[5]; `
-				cd $args[0]; `
-				#Write-Host ".\tools\plink.exe -t -C -v -pw $password -P $port $username@$ip $jcommand";`
-				.\tools\plink.exe -C -v -pw $password -P $port $username@$ip $jcommand;`
-			} `
-			-ArgumentList $currentDir, $username, $password, $ip, $port, $linuxCommand
+			$attemptswot += 1
 		}
 		else
 		{
 			$attemptswt += 1
+		}
+		if($usePrivateKey)
+		{
+			$runLinuxCmdJob = Start-Job -ScriptBlock `
+			{ `
+				$username = $args[1]; $key = $args[2]; $ip = $args[3]; $port = $args[4]; $jcommand = $args[5]; `
+				cd $args[0]; `
+				.\tools\plink.exe -t -C -v -i $key -P $port $username@$ip $jcommand;`
+			} `
+			-ArgumentList $currentDir, $username, ".\ssh\$sshKey", $ip, $port, $linuxCommand		
+		}
+		else
+		{
 			$runLinuxCmdJob = Start-Job -ScriptBlock `
 			{ `
 				$username = $args[1]; $password = $args[2]; $ip = $args[3]; $port = $args[4]; $jcommand = $args[5]; `
 				cd $args[0]; `
-				#Write-Host ".\tools\plink.exe -t -C -v -pw $password -P $port $username@$ip $jcommand";`
 				.\tools\plink.exe -t -C -v -pw $password -P $port $username@$ip $jcommand;`
 			} `
-			-ArgumentList $currentDir, $username, $password, $ip, $port, $linuxCommand
+			-ArgumentList $currentDir, $username, $password, $ip, $port, $linuxCommand		
 		}
 		$RunLinuxCmdOutput = ""
 		$debugOutput = ""

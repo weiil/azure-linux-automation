@@ -2973,6 +2973,13 @@
 			<CFScenario>
 				<isDeployed>NO</isDeployed>
 			</CFScenario>
+			<UNManagedCF>
+				<isDeployed>NO</isDeployed>
+			</UNManagedCF>
+			<ManagedCF>
+				<isDeployed>NO</isDeployed>
+				<isBoshDeployed>NO</isBoshDeployed>
+			</ManagedCF>
 		</Deployment>
 		
 
@@ -5168,7 +5175,54 @@
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_010</TestID>
-    </test>	
+    </test>
+    <test>
+      <testName>CPI-UNMANAGED-NETWORK-RESOURCE-GROUP-NAME</testName>
+      <testScript>CPI-NETWORK-RESOURCE-GROUP-NAME.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-NETWORK-RESOURCE-GROUP-NAME.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_011</TestID>
+    </test>
+    <test>
+      <testName>CPI-MANAGED-NETWORK-RESOURCE-GROUP-NAME</testName>
+      <testScript>CPI-NETWORK-RESOURCE-GROUP-NAME.py</testScript>
+      <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-NETWORK-RESOURCE-GROUP-NAME.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>ManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_012</TestID>
+    </test>
+
 
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
@@ -6245,6 +6299,18 @@
 				<Name>Template-bosh-managed-disk-single-vm-cf</Name>
 			</test>
 	    </Cycle>
+		<Cycle>
+			<cycleName>CF-UNMANAGED-SCENARIO</cycleName>
+			<test>
+				<Name>CPI-UNMANAGED-NETWORK-RESOURCE-GROUP-NAME</Name>
+			</test>
+		</Cycle>
+		<Cycle>
+			<cycleName>CF-MANAGED-SCENARIO</cycleName>
+			<test>
+				<Name>CPI-MANAGED-NETWORK-RESOURCE-GROUP-NAME</Name>
+			</test>
+		</Cycle>
 		<Cycle>
 			<cycleName>DEBUG</cycleName>
 			<!--You can add individual tests here and run them for debugging purpose. You can also add new cycles. -->
