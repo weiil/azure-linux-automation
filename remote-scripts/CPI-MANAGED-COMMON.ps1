@@ -52,7 +52,7 @@ try
     $port = 22
     $global:sshKey = "cf_devbox_privatekey.ppk"
 	$user = $parameters.adminUsername
-	$publicIPResourceID = (Get-AzureRmVM -Name $vmName -ResourceGroupName $isDeployed[1] | Get-AzureRmNetworkInterface).IpConfigurations[0].PublicIpAddress.id
+	$publicIPResourceID = (Get-AzureRmVM -ResourceGroupName $isDeployed[1] | where {$_.Name -match $($parameters.vmName)} | Get-AzureRmNetworkInterface).IpConfigurations[0].PublicIpAddress.id
 	$ip = (Get-AzureRmResource -ResourceId $publicIPResourceID).Properties.ipAddress
 	$setupType = $currentTestData.setupType
 	if( (!$EconomyMode) -or ( $EconomyMode -and ($xmlConfig.config.Azure.Deployment.$setupType.isBoshDeployed -eq "NO")))

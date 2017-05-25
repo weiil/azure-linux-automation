@@ -1437,6 +1437,7 @@ Function CreateRGDeploymentWithTempParameters([string]$RGName, $TemplateFile, $T
 Function CreateAllRGDeploymentsWithTempParameters($templateName, $location, $TemplateFile, $TemplateParameterFile)
 {
 	$setupType = $templateName
+	Set-Variable -Name setupType -Value $setupType -Scope Global
 	$type = $xmlConfig.SelectSingleNode("/config/Azure/Deployment/$setupType")
 	if( (!$type) -or (!$EconomyMode) -or ( $EconomyMode -and ($xmlConfig.config.Azure.Deployment.$setupType.isDeployed -eq "NO")))
 	{
