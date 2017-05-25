@@ -18,9 +18,10 @@ def get_current_location():
 
     coreindex = 0
     while core_usage[coreindex]['name']['localizedValue']!='Total Regional Cores':
-            currentcount = core_usage[coreindex]['currentValue']
-            limit = core_usage[coreindex]['limit']
             coreindex = coreindex + 1
+            
+    currentcount = core_usage[coreindex]['currentValue']
+    limit = core_usage[coreindex]['limit']
     RunLog.info("Total current core count %s " % currentcount)
     RunLog.info("Limit core count %s " % limit)
     left_core_count = int(limit) - int(currentcount)
