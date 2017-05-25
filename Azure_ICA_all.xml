@@ -5268,6 +5268,144 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_014</TestID>
     </test>
+    <test>
+      <testName>CPI-UNMANAGED-VNET-RESOURCE-GROUP-NAME</testName>
+      <testScript>CPI-VNET-RESOURCE-GROUP-NAME.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-VNET-RESOURCE-GROUP-NAME.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_015</TestID>
+    </test>
+    <test>
+      <testName>CPI-MANAGED-VNET-RESOURCE-GROUP-NAME</testName>
+      <testScript>CPI-VNET-RESOURCE-GROUP-NAME.py</testScript>
+      <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-VNET-RESOURCE-GROUP-NAME.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>ManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_014</TestID>
+    </test>
+    <test>
+      <testName>CPI-UNMANAGED-NETWORK-SECURITY-GROUP</testName>
+      <testScript>CPI-NETWORK-SECURITY-GROUP.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-NETWORK-SECURITY-GROUP.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_015</TestID>
+    </test>
+    <test>
+      <testName>CPI-MANAGED-NETWORK-SECURITY-GROUP</testName>
+      <testScript>CPI-NETWORK-SECURITY-GROUP.py</testScript>
+      <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-NETWORK-SECURITY-GROUP.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>ManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_016</TestID>
+    </test>
+    <test>
+      <testName>CPI-UNMANAGED-NETWORK-DYNAMIC</testName>
+      <testScript>CPI-NETWORK-DYNAMIC.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-NETWORK-DYNAMIC.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_017</TestID>
+    </test>
+    <test>
+      <testName>CPI-MANAGED-NETWORK-DYNAMIC</testName>
+      <testScript>CPI-NETWORK-DYNAMIC.py</testScript>
+      <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-NETWORK-DYNAMIC.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>ManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_018</TestID>
+    </test>
 
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
@@ -6349,11 +6487,35 @@
 			<test>
 				<Name>CPI-UNMANAGED-NETWORK-RESOURCE-GROUP-NAME</Name>
 			</test>
+			<test>
+				<Name>CPI-UNMANAGED-VNET-RESOURCE-GROUP-NAME</Name>
+			</test>
+			<test>
+				<Name>CPI-UNMANAGED-NETWORK-SECURITY-GROUP</Name>
+			</test>
+			<test>
+				<Name>CPI-UNMANAGED-NETWORK-DYNAMIC</Name>
+			</test>
+			<test>
+				<Name>CPI-UNMANAGED-RANDOM-VM-TYPE</Name>
+			</test>
 		</Cycle>
 		<Cycle>
 			<cycleName>CF-MANAGED-SCENARIO</cycleName>
 			<test>
 				<Name>CPI-MANAGED-NETWORK-RESOURCE-GROUP-NAME</Name>
+			</test>
+			<test>
+				<Name>CPI-MANAGED-VNET-RESOURCE-GROUP-NAME</Name>
+			</test>
+			<test>
+				<Name>CPI-MANAGED-NETWORK-SECURITY-GROUP</Name>
+			</test>
+			<test>
+				<Name>CPI-MANAGED-NETWORK-DYNAMIC</Name>
+			</test>
+			<test>
+				<Name>CPI-MANAGED-RANDOM-VM-TYPE</Name>
 			</test>
 		</Cycle>
 		<Cycle>
