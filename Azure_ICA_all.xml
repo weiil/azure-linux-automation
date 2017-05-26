@@ -5406,7 +5406,75 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_020</TestID>
     </test>
-
+    <test>
+      <testName>CPI-UNMANAGED-DATA-DISK-CACHING</testName>
+      <testScript>CPI-DATA-DISK-CACHING.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-DATA-DISK-CACHING.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_021</TestID>
+    </test>
+    <test>
+      <testName>CPI-UNMANAGED-DATA-DISK-RESIZE</testName>
+      <testScript>CPI-DATA-DISK-RESIZE.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-DATA-DISK-RESIZE.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_022</TestID>
+    </test>
+    <test>
+      <testName>CPI-MANAGED-DATA-DISK-RESIZE</testName>
+      <testScript>CPI-DATA-DISK-RESIZE.py</testScript>
+      <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-DATA-DISK-RESIZE.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_023</TestID>
+    </test>
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
 			<testName>ICA-TERASORT-BENCHMARK-TEST</testName>
@@ -6499,6 +6567,12 @@
 			<test>
 				<Name>CPI-UNMANAGED-RANDOM-VM-TYPE</Name>
 			</test>
+			<test>
+				<Name>CPI-UNMANAGED-DATA-DISK-CACHING</Name>
+			</test>
+			<test>
+				<Name>CPI-UNMANAGED-DATA-DISK-RESIZE</Name>
+			</test>
 		</Cycle>
 		<Cycle>
 			<cycleName>CF-MANAGED-SCENARIO</cycleName>
@@ -6517,6 +6591,11 @@
 			<test>
 				<Name>CPI-MANAGED-RANDOM-VM-TYPE</Name>
 			</test>
+			<!--
+			updating
+			<test>
+				<Name>CPI-MANAGED-DATA-DISK-RESIZE</Name>
+			</test> -->
 		</Cycle>
 		<Cycle>
 			<cycleName>DEBUG</cycleName>
