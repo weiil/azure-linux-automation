@@ -5312,7 +5312,7 @@
       <TestFeature>
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
-      <TestID>AzureTemplate_014</TestID>
+      <TestID>AzureTemplate_016</TestID>
     </test>
     <test>
       <testName>CPI-UNMANAGED-NETWORK-SECURITY-GROUP</testName>
@@ -5335,7 +5335,7 @@
       <TestFeature>
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
-      <TestID>AzureTemplate_015</TestID>
+      <TestID>AzureTemplate_017</TestID>
     </test>
     <test>
       <testName>CPI-MANAGED-NETWORK-SECURITY-GROUP</testName>
@@ -5358,7 +5358,7 @@
       <TestFeature>
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
-      <TestID>AzureTemplate_016</TestID>
+      <TestID>AzureTemplate_018</TestID>
     </test>
     <test>
       <testName>CPI-UNMANAGED-NETWORK-DYNAMIC</testName>
@@ -5381,7 +5381,7 @@
       <TestFeature>
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
-      <TestID>AzureTemplate_017</TestID>
+      <TestID>AzureTemplate_019</TestID>
     </test>
     <test>
       <testName>CPI-MANAGED-NETWORK-DYNAMIC</testName>
@@ -5404,7 +5404,7 @@
       <TestFeature>
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
-      <TestID>AzureTemplate_018</TestID>
+      <TestID>AzureTemplate_020</TestID>
     </test>
 
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
