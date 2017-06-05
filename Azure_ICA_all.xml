@@ -5457,7 +5457,7 @@
       <testScript>CPI-DATA-DISK-RESIZE.py</testScript>
       <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
       <files>.\remote-scripts\CPI-DATA-DISK-RESIZE.py,.\remote-scripts\azuremodules.py</files>
-      <setupType>UNManagedCF</setupType>
+      <setupType>ManagedCF</setupType>
       <parameters>
         <vmName></vmName>
         <adminUsername></adminUsername>
