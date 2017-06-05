@@ -34,12 +34,16 @@ def get_data_disk_info_by_vm_name(rg_name, vm_name):
     container = vhd_uri.split('/')[3]
     return (storage, container, vhd_name) 
 
-def get_data_disk_size(rg_name, vm_name):
-    storage, container, vhd = get_data_disk_info_by_vm_name(rg_name, vm_name)
-    key = get_storage_access(rg_name, storage)
-    content_length = Run("az storage blob show -c %s -n %s --query \"properties.contentLength\" --account-name %s --account-key %s | tr -d '\\n'" % (container, vhd, storage, key))
-    # unit: GB
-    return int(content_length) / 1024 / 1024 / 1024
+def get_data_disk_size(rg_name, vm_name, managed):
+    if not managed:
+        storage, container, vhd = get_data_disk_info_by_vm_name(rg_name, vm_name)
+        key = get_storage_access(rg_name, storage)
+        content_length = Run("az storage blob show -c %s -n %s --query \"properties.contentLength\" --account-name %s --account-key %s | tr -d '\\n'" % (container, vhd, storage, key))
+        # unit: GB
+        return int(content_length) / 1024 / 1024 / 1024
+    else:
+        disk_size = Run("az vm unmanaged-disk list -n %s -g %s --query \"[?createOption=='attach'].diskSizeGb | [0]\" | tr -d '\"' | tr -d '\\n'" % (vm_name, rg_name))
+        return int(disk_size)
 
 def RunTest():
     UpdateState("TestStarted")
@@ -52,6 +56,14 @@ def RunTest():
 
     RunLog.info("upload stemcell v3312.12 for resize teseting")
     Run("bosh upload stemcell https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-trusty-go_agent?v=3312.12 --sha1 2cc0ecc75a2e29c4df1bea18e91c777688026fed --skip-if-exists")
+
+    is_managed = Run("cat bosh.yml | grep \'use_managed_disks\' | awk {\'print $2\'} | tr -d '\\n'")
+    if is_managed == 'true':
+        is_managed = True
+        RunLog.info("testing for managed disk")
+    else:
+        is_managed = False
+        RunLog.info("testing for unmanaged disk")
 
     if DeployCF(destination_manifest_name):
         RunLog.info("inital deploy successfully")
@@ -75,7 +87,7 @@ def RunTest():
         if DeployCF(destination_manifest_name):
             RunLog.info('deploy successfully after increse size to %s' % size1)
             RunLog.info('verify:')
-            cur_size1 = get_data_disk_size(resource_group_name, job_vm)
+            cur_size1 = get_data_disk_size(resource_group_name, job_vm, is_managed)
             if cur_size1 == size1 / 1024:
                 RunLog.info('pass, current size is %s' % cur_size1)
                 RunLog.info('resizing(decrease) data disk')
@@ -88,7 +100,7 @@ def RunTest():
                 if DeployCF(destination_manifest_name):
                     RunLog.info('deploy successfully after decrease size to %s' % size2)
                     RunLog.info('verify:')
-                    cur_size2 = get_data_disk_size(resource_group_name, job_vm)
+                    cur_size2 = get_data_disk_size(resource_group_name, job_vm, is_managed)
                     if cur_size2 == size2 / 1024:
                         RunLog.info('pass, current size is %s' % cur_size2)
                         ResultLog.info('PASS')
