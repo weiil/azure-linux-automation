@@ -5466,7 +5466,7 @@
         <tenantID></tenantID>
         <clientID></clientID>
         <clientSecret></clientSecret>
-        <autoDeployBosh>enabled</autoDeployBosh>
+        <autoDeployBosh>disabled</autoDeployBosh>
       </parameters>
       <TestType>
       </TestType>
@@ -5474,6 +5474,29 @@
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_023</TestID>
+    </test>
+    <test>
+      <testName>CPI-MANAGED-DATA-DISK-STORAGE-TYPE</testName>
+      <testScript>CPI-DATA-DISK-STORAGE.py</testScript>
+      <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-DATA-DISK-STORAGE.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>ManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_024</TestID>
     </test>
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
