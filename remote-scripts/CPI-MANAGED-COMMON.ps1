@@ -58,7 +58,7 @@ try
 	if( (!$EconomyMode) -or ( $EconomyMode -and ($xmlConfig.config.Azure.Deployment.$setupType.isBoshDeployed -eq "NO")))
 	{
 		LogMsg "Update bosh.yml for managed-disk scenario and deploy bosh"
-		RunLinuxCmd -username $user -password $password -ip $ip -port $port -command "sed -i '/azure: &azure$/a\      use_managed_disks: true' bosh.yml" -usePrivateKey
+		RunLinuxCmd -username $user -password $password -ip $ip -port $port -command "sed -i '/environment:/a\      use_managed_disks: true' bosh.yml" -usePrivateKey
 		LogMsg "Start deploy bosh"
 		$out = RunLinuxCmd -username $user -password $password -ip $ip -port $port -command "./deploy_bosh.sh && echo bosh_deploy_pass || echo bosh_deploy_fail" -runMaxAllowedTime 3600 -usePrivateKey
 		if($out -match 'bosh_deploy_pass')
