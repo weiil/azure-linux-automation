@@ -93,6 +93,12 @@ def remove_unnessary_releases(obj_manifest):
         if v['name'] == 'cf':
             return [v]
 
+def remove_unnessary_resourcepools(obj_manifest):
+    resource_pools = obj_manifest['resource_pools']
+    for k, v in enumerate(resource_pools):
+        if v['name'] == 'resource_postgres_z1':
+            return [v]
+
 def generate_manifest(manifest_file_name, obj_manifest):
     with open(manifest_file_name,'w') as f:
         yaml.dump(obj_manifest,f)
@@ -104,16 +110,20 @@ def str_match(match_str, file_name):
                 return True
     return False
 
+def GetPremiumVMSizes():
+    return ['Standard_DS1', 'Standard_DS2', 'Standard_DS3', 'Standard_DS4', 'Standard_DS11', 'Standard_DS12', 'Standard_DS13', 'Standard_DS14', 'Standard_DS1_v2', 'Standard_DS2_v2', 'Standard_DS3_v2', 'Standard_DS4_v2', 'Standard_DS5_v2', 'Standard_DS11_v2', 'Standard_DS12_v2', 'Standard_DS13_v2', 'Standard_DS14_v2', 'Standard_DS15_v2', 'Standard_GS1', 'Standard_GS2', 'Standard_GS3', 'Standard_GS4', 'Standard_GS5'] 
 
 def InstallAzureCli():
-    Run("echo 'deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main' | sudo tee /etc/apt/sources.list.d/azure-cli.list")
-    Run("sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893")
-    AptgetPackageInstall("apt-transport-https")
-    UpdateRepos("ubuntu")
-    if AptgetPackageInstall("azure-cli"):
-        return True
-    else:
-        return False
+    temp = Run("command -v az")
+    if not ("az" in temp):
+        Run("echo 'deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main' | sudo tee /etc/apt/sources.list.d/azure-cli.list")
+        Run("sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893")
+        AptgetPackageInstall("apt-transport-https")
+        UpdateRepos("ubuntu")
+        if AptgetPackageInstall("azure-cli"):
+            return True
+        else:
+            return False
 
 def DeployCF(cf_manifest_file):
         RunLog.info("Interactive deployment CF")

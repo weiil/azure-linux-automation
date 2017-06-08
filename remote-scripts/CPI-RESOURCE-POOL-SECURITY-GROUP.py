@@ -23,11 +23,9 @@ def Update_cf_manifest(source_yml_file, destination_yml_file, security_group_nam
     out['resource_pools'] = remove_unnessary_resourcepools(out)
     out['releases'][0]['version'] = 'latest'
     out['resource_pools'][0]['stemcell']['version'] = 'latest'
-    network = filter(lambda j:j.get('name') == 'cf_private', out['networks'])
-    network[0]['subnets'][0]['cloud_properties']['security_group'] = security_group_name
-    out['resource_pools'][0]['cloud_properties'].pop('security_group')
+    out['resource_pools'][0]['cloud_properties']['security_group'] = security_group_name
     out['name'] = cf_deployment_name
-    out['jobs'][0]['name'] = 'separatensg_z1'
+    out['jobs'][0]['name'] = 'rpnsg_z1'
     out['jobs'][0]['networks'][0].pop('static_ips')
     generate_manifest(destination_yml_file ,out)
 
@@ -44,7 +42,7 @@ def RunTest():
     Update_cf_manifest(source_manifest_name, destination_manifest_name, security_group_name)
     if DeployCF(destination_manifest_name):
         RunLog.info('Start to verify the security group')
-        host_name = Run("bosh vms --details | grep separatensg_z1 | awk '{print $13}'")
+        host_name = Run("bosh vms --details | grep rpnsg_z1 | awk '{print $13}'")
         nsg_info = Run('az network nsg show -g %s -n %s	--query networkInterfaces[].id' % (resource_group_name, security_group_name))
         if host_name and (host_name.strip('\n') in nsg_info):
             RunLog.info("Test PASS, Remove deployed CF %s and test resources" % cf_deployment_name)		
@@ -60,8 +58,8 @@ def RunTest():
 
 #set variable
 source_manifest_name = 'example_manifests/single-vm-cf.yml'
-destination_manifest_name = 'cpi-separate-nsg-cf.yml'
-cf_deployment_name = 'separate-nsg-cf'
+destination_manifest_name = 'cpi-rp-nsg-cf.yml'
+cf_deployment_name = 'rp-nsg-cf'
 security_group_name = 'test-nsg-%s' % random.randint(1,100)
 
 RunTest()
