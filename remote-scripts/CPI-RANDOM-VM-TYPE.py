@@ -34,7 +34,7 @@ def get_current_location():
         count = sizes[index]['maxDataDiskCount']
         size = sizes[index]['name']
         needed_core = sizes[index]['numberOfCores']
-        if count >= 2 and needed_core*3 <= left_core_count:
+        if count >= 2 and needed_core <= left_core_count:
             RunLog.info("Get meet requirement size %s " % size)
             break
         else:
