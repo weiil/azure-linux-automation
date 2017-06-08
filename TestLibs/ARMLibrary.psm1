@@ -1466,8 +1466,6 @@ Function CreateAllRGDeploymentsWithTempParameters($templateName, $location, $Tem
 							$retValue = "True"
 							$isServiceDeployed = "True"
 							$resourceGroupCount = $resourceGroupCount + 1
-							$deployedGroups = $groupName
-							Set-Variable -Name deployedGroups -Value $deployedGroups -Scope Global
 							if($type)
 							{
 								$xmlConfig.config.Azure.Deployment.$setupType.isDeployed = $retValue
@@ -1502,5 +1500,5 @@ Function CreateAllRGDeploymentsWithTempParameters($templateName, $location, $Tem
 	{
 		$retValue = $xmlConfig.config.Azure.Deployment.$setupType.isDeployed
 	}
-	return $retValue, $deployedGroups, $resourceGroupCount, $DeploymentElapsedTime
+	return $retValue, $groupName, $resourceGroupCount, $DeploymentElapsedTime
 }

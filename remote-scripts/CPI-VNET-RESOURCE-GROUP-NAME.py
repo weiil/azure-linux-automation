@@ -15,6 +15,10 @@ def Update_cf_manifest(source_yml_file, destination_yml_file, resource_group_nam
     out = load_manifest(source_yml_file)
     out['jobs'] = remove_unnessary_jobs(out)
     out['releases'] = remove_unnessary_releases(out)
+    out['resource_pools'] = remove_unnessary_resourcepools(out)
+    out['releases'][0]['version'] = 'latest'
+    out['resource_pools'][0]['stemcell']['version'] = 'latest'
+
     network = filter(lambda j:j.get('name') == 'cf_private', out['networks'])
     network[0]['subnets'][0]['cloud_properties']['resource_group_name'] = resource_group_name
     out['name'] = cf_deployment_name
@@ -38,20 +42,25 @@ def RunTest():
     move_vnet_resource(vnet_name, old_rg_name, temp_resource_group_name)
     Update_cf_manifest(source_manifest_name, destination_manifest_name, temp_resource_group_name)
     if DeployCF(destination_manifest_name):
-        RunLog.info("Remove deployed CF %s and test resources" % cf_deployment_name)		
-        Run("echo yes | bosh delete deployment %s" % cf_deployment_name)
-        move_vnet_resource(vnet_name, temp_resource_group_name, old_rg_name)
-        Run('az group delete --name %s -y' % temp_resource_group_name)
-        ResultLog.info('PASS')
-        UpdateState("TestCompleted")
+        RunLog.info('Start to verify the vnet info')
+        host_name = Run("bosh vms --details | grep separatevnet_z1 | awk '{print $13}'")
+        vnet_info = Run('az network vnet show -g %s -n %s --query subnets[].ipConfigurations[].id' % (temp_resource_group_name, vnet_name))
+        if host_name and (host_name.strip('\n') in vnet_info):
+            RunLog.info("Test PASS, Remove deployed CF %s and test resources" % cf_deployment_name)		
+            Run("echo yes | bosh delete deployment %s" % cf_deployment_name)
+            move_vnet_resource(vnet_name, temp_resource_group_name, old_rg_name)
+            Run('az group delete --name %s -y' % temp_resource_group_name)
+            ResultLog.info('PASS')
+        else:
+            RunLog.info("Test FAIL")
+            ResultLog.info('FAIL')
     else:
         ResultLog.error('FAIL')
-        UpdateState("TestCompleted")
-
+    UpdateState("TestCompleted")
 
 #set variable
 source_manifest_name = 'example_manifests/single-vm-cf.yml'
-destination_manifest_name = 'cpi-separate-vnet-single-vm-cf.yml'
+destination_manifest_name = 'cpi-separate-vnet-cf.yml'
 cf_deployment_name = 'separate-vnet-cf'
 temp_resource_group_name = 'vnetrg-%s' % random.randint(1,100)
 
