@@ -5913,10 +5913,10 @@
       <TestID>AzureTemplate_042</TestID>
     </test>
     <test>
-      <testName>CPI-UNMANAGED-DETACH-DATA-DISK</testName>
-      <testScript>CPI-DETACH-DATA-DISK.py</testScript>
+      <testName>CPI-UNMANAGED-DATA-DISK-DETACH</testName>
+      <testScript>CPI-DATA-DISK-DETACH.py</testScript>
       <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
-      <files>.\remote-scripts\CPI-DETACH-DATA-DISK.py,.\remote-scripts\azuremodules.py</files>
+      <files>.\remote-scripts\CPI-DATA-DISK-DETACH.py,.\remote-scripts\azuremodules.py</files>
       <setupType>UNManagedCF</setupType>
       <parameters>
         <vmName></vmName>
@@ -5936,10 +5936,10 @@
       <TestID>AzureTemplate_043</TestID>
     </test>
     <test>
-      <testName>CPI-MANAGED-DETACH-DATA-DISK</testName>
-      <testScript>CPI-DETACH-DATA-DISK.py</testScript>
+      <testName>CPI-MANAGED-DATA-DISK-DETACH</testName>
+      <testScript>CPI-DATA-DISK-DETACH.py</testScript>
       <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
-      <files>.\remote-scripts\CPI-DETACH-DATA-DISK.py,.\remote-scripts\azuremodules.py</files>
+      <files>.\remote-scripts\CPI-DATA-DISK-DETACH.py,.\remote-scripts\azuremodules.py</files>
       <setupType>ManagedCF</setupType>
       <parameters>
         <vmName></vmName>
@@ -7081,7 +7081,7 @@
 				<Name>CPI-UNMANAGED-CUSTOM-OS-DISK-SIZE</Name>
 			</test>
 			<test>
-				<Name>CPI-UNMANAGED-DETACH-DATA-DISK</Name>
+				<Name>CPI-UNMANAGED-DATA-DISK-DETACH</Name>
 			</test>
 			<test>
 				<Name>CPI-STORAGE-ACCOUNT-NOT-EXIST</Name>
@@ -7132,7 +7132,7 @@
 				<Name>CPI-MANAGED-CUSTOM-OS-DISK-SIZE</Name>
 			</test>
 			<test>
-				<Name>CPI-MANAGED-DETACH-DATA-DISK</Name>
+				<Name>CPI-MANAGED-DATA-DISK-DETACH</Name>
 			</test>
 			<!--
 			updating
