@@ -5866,6 +5866,52 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_040</TestID>
     </test>
+	<test>
+      <testName>CPI-STORAGE-ACCOUNT-NOT-EXIST</testName>
+      <testScript>CPI-STORAGE-ACCOUNT-NOT-EXIST.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-STORAGE-ACCOUNT-NOT-EXIST.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_041</TestID>
+    </test>
+	<test>
+      <testName>CPI-STORAGE-ACCOUNT-EXIST</testName>
+      <testScript>CPI-STORAGE-ACCOUNT-EXIST.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-STORAGE-ACCOUNT-EXIST.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_042</TestID>
+    </test>
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
 			<testName>ICA-TERASORT-BENCHMARK-TEST</testName>
