@@ -5866,7 +5866,7 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_040</TestID>
     </test>
-	<test>
+    <test>
       <testName>CPI-STORAGE-ACCOUNT-NOT-EXIST</testName>
       <testScript>CPI-STORAGE-ACCOUNT-NOT-EXIST.py</testScript>
       <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
@@ -5889,7 +5889,7 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_041</TestID>
     </test>
-	<test>
+    <test>
       <testName>CPI-STORAGE-ACCOUNT-EXIST</testName>
       <testScript>CPI-STORAGE-ACCOUNT-EXIST.py</testScript>
       <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
@@ -5911,6 +5911,52 @@
       </TestFeature>
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_042</TestID>
+    </test>
+    <test>
+      <testName>CPI-UNMANAGED-DETACH-DATA-DISK</testName>
+      <testScript>CPI-DETACH-DATA-DISK.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-DETACH-DATA-DISK.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_043</TestID>
+    </test>
+    <test>
+      <testName>CPI-MANAGED-DETACH-DATA-DISK</testName>
+      <testScript>CPI-DETACH-DATA-DISK.py</testScript>
+      <testScriptPs1>CPI-MANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-DETACH-DATA-DISK.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>ManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>disabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_044</TestID>
     </test>
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
@@ -7034,6 +7080,15 @@
 			<test>
 				<Name>CPI-UNMANAGED-CUSTOM-OS-DISK-SIZE</Name>
 			</test>
+			<test>
+				<Name>CPI-UNMANAGED-DETACH-DATA-DISK</Name>
+			</test>
+			<test>
+				<Name>CPI-STORAGE-ACCOUNT-NOT-EXIST</Name>
+			</test>
+			<test>
+				<Name>CPI-STORAGE-ACCOUNT-EXIST</Name>
+			</test>
 		</Cycle>
 		<Cycle>
 			<cycleName>CF-MANAGED-SCENARIO</cycleName>
@@ -7075,6 +7130,9 @@
 			</test>
 			<test>
 				<Name>CPI-MANAGED-CUSTOM-OS-DISK-SIZE</Name>
+			</test>
+			<test>
+				<Name>CPI-MANAGED-DETACH-DATA-DISK</Name>
 			</test>
 			<!--
 			updating
