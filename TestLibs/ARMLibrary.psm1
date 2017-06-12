@@ -1446,7 +1446,7 @@ Function CreateAllRGDeploymentsWithTempParameters($templateName, $location, $Tem
 		$isServiceDeployed = "False"
 		$retryDeployment = 0
 		$groupName = "ICA-RG-" + $templateName + "-" + $curtime.Month + "-" +  $curtime.Day  + "-" + $curtime.Hour + "-" + $curtime.Minute + "-" + $curtime.Second
-
+        Set-Variable -Name groupName -Value $groupName -Scope Global
 		while (($isServiceDeployed -eq "False") -and ($retryDeployment -lt 3))
 		{
 			LogMsg "Creating Resource Group : $groupName."
