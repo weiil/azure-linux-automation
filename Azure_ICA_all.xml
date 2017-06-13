@@ -5958,6 +5958,29 @@
       <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
       <TestID>AzureTemplate_044</TestID>
     </test>
+	<test>
+      <testName>CPI-STORAGE-ACCOUNT-PATTERN</testName>
+      <testScript>CPI-STORAGE-ACCOUNT-PATTERN.py</testScript>
+      <testScriptPs1>CPI-UNMANAGED-COMMON.ps1</testScriptPs1>
+      <files>.\remote-scripts\CPI-STORAGE-ACCOUNT-PATTERN.py,.\remote-scripts\azuremodules.py</files>
+      <setupType>UNManagedCF</setupType>
+      <parameters>
+        <vmName></vmName>
+        <adminUsername></adminUsername>
+        <sshKeyData></sshKeyData>
+        <environment></environment>
+        <tenantID></tenantID>
+        <clientID></clientID>
+        <clientSecret></clientSecret>
+        <autoDeployBosh>enabled</autoDeployBosh>
+      </parameters>
+      <TestType>
+      </TestType>
+      <TestFeature>
+      </TestFeature>
+      <SupportedExecutionModes>AzureResourceManager</SupportedExecutionModes>
+      <TestID>AzureTemplate_045</TestID>
+    </test>
 		<!-- IMPORTED FROM LISA TEST DEFINITIONS -->
 		<test>
 			<testName>ICA-TERASORT-BENCHMARK-TEST</testName>

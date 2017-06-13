@@ -79,7 +79,7 @@ def RunTest():
     InstallAzureCli()
     set_azure_subscription('settings')
 
-    random_storage_account_name = generate_random_storage_account(random.randint(3,12))
+    random_storage_account_name = generate_random_storage_account(random.randint(3,24))
     Update_cf_manifest(source_manifest_name, destination_manifest_name, random_storage_account_name)
     if DeployCF(destination_manifest_name):
         vm_name = Run('bosh vms --details | grep random_storage_account_name | awk \'{print $13}\'')
