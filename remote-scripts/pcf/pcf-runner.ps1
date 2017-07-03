@@ -21,9 +21,10 @@ $clientSecret = $sp.ClientSecret.Trim()
 $azureEnv = $sp.Environment.Trim()
 $opsmanVersion = $env:OpsManVersion.Trim()
 $director_passwd = $env:DirectorPassword.Trim()
-$elasticRuntimeVersion = $env:ElasticRuntimeVersion.Trim()
+$elasticRuntimeVersion = $env:ElasticRuntimeRelease.Trim()
 $location = $env:Location.Trim()
 $pivotalDownloadAPIToken = $env:Token.Trim()
+$passwd = $env:DevCliVMPassword.Trim()
 
 
 Write-Host "  1. Login Azure with Service Principle"
@@ -42,7 +43,6 @@ $boshStorage = "mybosh" + [guid]::NewGuid().guid.split('-')[0]
 $vmName = "DEV-CLI-PCF$postfix"
 
 $userName = "azureuser"
-$passwd = "#EDCzaq1"
 Set-Variable -Name password -Value $passwd -Scope Global
 
 # Definer user name and blank password
