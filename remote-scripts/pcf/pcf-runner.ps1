@@ -1,9 +1,9 @@
 # import test libs
-Import-Module $pwd\CloudTesting\TestLibs\AzureWinUtils.psm1 -Force -Scope Global
-Import-Module $pwd\CloudTesting\TestLibs\RDFELibs.psm1 -Force -Scope Global
-Import-Module $pwd\CloudTesting\TestLibs\ARMLibrary.psm1 -Force -Scope Global
+Import-Module .\TestLibs\AzureWinUtils.psm1 -Force -Scope Global
+Import-Module .\TestLibs\RDFELibs.psm1 -Force -Scope Global
+Import-Module .\TestLibs\ARMLibrary.psm1 -Force -Scope Global
 
-$testDir = "$pwd\CloudTesting\testresults" + "\" + 'pcf'
+$testDir = "testresults" + "\" + 'pcf'
 mkdir $testDir -ErrorAction SilentlyContinue | out-null
 $logFile = $testDir + "\" + 'pcf-testing-on-azure.log'
 Set-Variable -Name logfile -Value $logFile -Scope Global
@@ -12,7 +12,7 @@ Write-Host "------------------------------------------------------------------ R
 
 # load parameters
 $sp_config = ($env:ServicePrincipalConfig).ToString().trim()
-$sp = Get-Content "$pwd\CI\Cloud\ServicePrincipalConfig\$sp_config" -Raw | ConvertFrom-Json
+$sp = Get-Content "..\CI\Cloud\ServicePrincipalConfig\$sp_config" -Raw | ConvertFrom-Json
 
 $subscriptionId = $sp.SubscriptionId.Trim()
 $tenantId = $sp.TenantId.Trim()
@@ -108,7 +108,7 @@ Write-Host "        azure-cli $out was installed"
 Write-Host ""
 
 Write-Host "  4. Prepare to deploy PCF on Azure"
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CloudTesting\remote-scripts\pcf\prepare-pcf-infrastructure-on-azure.sh' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\prepare-pcf-infrastructure-on-azure.sh' -username $userName -password $passwd -upload
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "chmod a+x prepare-pcf-infrastructure-on-azure.sh"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh-keygen -t rsa -f opsman -C ubuntu"
 $sshKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman.pub"
@@ -126,7 +126,7 @@ Write-Host ""
 
 Write-Host "  5. Configure manifest of BOSH"
 # upload manifests and scripts to dev vm
-$filepath = "$pwd\CI\Cloud\CF\bosh-for-pcf.yml"
+$filepath = "..\CI\Cloud\CF\bosh-for-pcf.yml"
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_STORAGE',$boshStorage) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_SUBSCRIPTION_ID',$subscriptionId) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_TENANT_ID',$tenantId) | Set-Content $filepath
@@ -138,12 +138,12 @@ $filepath = "$pwd\CI\Cloud\CF\bosh-for-pcf.yml"
 RemoteCopy -uploadTo $publicIP -port $port -files $filepath -username $userName -password $passwd -upload
 
 # upload deploy_bosh_for_pcf.sh to dev vm
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CloudTesting\remote-scripts\pcf\deploy_bosh_for_pcf.sh' -username $userName -password $passwd -upload
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CI\Cloud\CF\root_ca_certificate' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_bosh_for_pcf.sh' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\root_ca_certificate' -username $userName -password $passwd -upload
 # upload pcf manifest to dev vm
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CI\Cloud\CF\pcf-on-azure.yml' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\pcf-on-azure.yml' -username $userName -password $passwd -upload
 # upload cloud-config for PCF on azure
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CI\Cloud\CF\pcf-cloud-config.yml' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\pcf-cloud-config.yml' -username $userName -password $passwd -upload
 Write-Host ""
 
 Write-Host "  6. Deploy BOSH director"
@@ -175,19 +175,19 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-on-azure.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-on-azure.yml"
 
 # upload script for download releases
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CloudTesting\remote-scripts\pcf\download_releases.py' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\download_releases.py' -username $userName -password $passwd -upload
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman download_releases.py ubuntu@${opsmanfqdn}:/home/ubuntu/download_releases.py"
 
 # upload script for upload releases
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CloudTesting\remote-scripts\pcf\upload_releases.sh' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\upload_releases.sh' -username $userName -password $passwd -upload
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman upload_releases.sh ubuntu@${opsmanfqdn}:/home/ubuntu/upload_releases.sh"
 
 # upload scropt for get stemcell-version information for a elastic runtime release
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CloudTesting\remote-scripts\pcf\get_stemcell_version.py' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\get_stemcell_version.py' -username $userName -password $passwd -upload
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman get_stemcell_version.py ubuntu@${opsmanfqdn}:/home/ubuntu/get_stemcell_version.py"
 
 # upload deploy_pcf_on_azure.sh
-RemoteCopy -uploadTo $publicIP -port $port -files '$pwd\CloudTesting\remote-scripts\pcf\deploy_pcf_on_azure.sh' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_pcf_on_azure.sh' -username $userName -password $passwd -upload
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman deploy_pcf_on_azure.sh ubuntu@${opsmanfqdn}:/home/ubuntu/deploy_pcf_on_azure.sh"
 
 # update manifest of pcf according to elastic runtime version and start the PCF deployment
