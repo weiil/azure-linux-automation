@@ -2095,7 +2095,7 @@ Function RunLinuxCmd([string] $username,[string] $password,[string] $ip,[string]
 		}
 		else
 		{
-			WrapperCommandsToFile -username $username - password $password  -ip $ip -command $command -port $port
+			WrapperCommandsToFile -username $username -password $password  -ip $ip -command $command -port $port
 		}
 	}
 	$randomFileName = [System.IO.Path]::GetRandomFileName()
