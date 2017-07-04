@@ -92,6 +92,11 @@ Set-AzureRmVMOSDisk -VM $vmConfig -Name $OSDiskName -VhdUri $OSDiskUri -CreateOp
 
 # Create a virtual machine
 New-AzureRmVM -ResourceGroupName $resourceGroup -Location $location -VM $vmConfig
+
+$interface = Get-AzureRmNetworkInterface -ResourceGroupName $resourceGroup
+$publicIPName = $(Get-AzureRmResource -ResourceId $interface.IpConfigurations[0].PublicIpAddress.Id).Name
+$publicIP = $(Get-AzureRmPublicIpAddress -Name $publicIPName -ResourceGroupName $resourceGroup).IpAddress
+
 Write-Host "        Dev VM is created"
 Write-Host "          RG: $resourceGroup"
 Write-Host "          VM: $vmName"
