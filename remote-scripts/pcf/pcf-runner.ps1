@@ -115,7 +115,7 @@ Write-Host ""
 Write-Host "  4. Prepare to deploy PCF on Azure"
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\prepare-pcf-infrastructure-on-azure.sh' -username $userName -password $passwd -upload
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "chmod a+x prepare-pcf-infrastructure-on-azure.sh"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh-keygen -t rsa -f opsman -C ubuntu"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh-keygen -t rsa -f opsman -C ubuntu -N ''"
 $sshKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman.pub"
 
 @{tenantId=$tenantId;clientId=$clientId;clientSecret=$clientSecret;sshKey=$sshKey;resourceGroup=$resourceGroup_PCF;location=$location;boshStorage=$boshStorage;opsmanVersion=$opsmanVersion} | ConvertTo-Json | Out-File params.json
