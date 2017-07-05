@@ -120,7 +120,7 @@ $sshKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port 
 
 @{tenantId=$tenantId;clientId=$clientId;clientSecret=$clientSecret;sshKey=$sshKey;resourceGroup=$resourceGroup_PCF;location=$location;boshStorage=$boshStorage;opsmanVersion=$opsmanVersion} | ConvertTo-Json | Out-File params.json -Encoding utf8
 RemoteCopy -uploadTo $publicIP -port $port -files '.\params.json' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./prepare-pcf-infrastructure-on-azure.sh params.json 2&> prepare-pcf-infrastructure-on-azure.log"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./prepare-pcf-infrastructure-on-azure.sh params.json 2&> prepare-pcf-infrastructure-on-azure.log" -runMaxAllowedTime 1800
 # get ops man FQDN
 $opsmanfqdn = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i fqdn | awk {'print `$4'} | tr -d '\n'"
 Write-Host "        Infrastructure of PCF on Azure is created"
