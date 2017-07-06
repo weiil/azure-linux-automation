@@ -120,7 +120,7 @@ $sshKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port 
 
 @{tenantId=$tenantId;clientId=$clientId;clientSecret=$clientSecret;sshKey=$sshKey;resourceGroup=$resourceGroup_PCF;location=$location;boshStorage=$boshStorage;opsmanVersion=$opsmanVersion} | ConvertTo-Json | Out-File params.json -Encoding utf8
 RemoteCopy -uploadTo $publicIP -port $port -files '.\params.json' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./prepare-pcf-infrastructure-on-azure.sh params.json >prepare-pcf-infrastructure-on-azure.log 2>&1" -runMaxAllowedTime 1800
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./prepare-pcf-infrastructure-on-azure.sh params.json >prepare-pcf-infrastructure-on-azure.log 2>&1" -runMaxAllowedTime 2400
 # get ops man FQDN
 $opsmanfqdn = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i fqdn | awk {'print `$4'}"
 Write-Host "        Infrastructure of PCF on Azure is created"
@@ -154,6 +154,7 @@ Write-Host ""
 Write-Host "  6. Deploy BOSH director"
 # get pcf-lb-ip address
 $lb_ip = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure network public-ip show $resourceGroup_PCF pcf-lb-ip --json | jq .ipAddress | tr -d '`"'"
+Write-Host "Public IP address of PCF LB is $lb_ip"
 # upload bosh manifest from dev vm to opsman vm
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman bosh-for-pcf.yml ubuntu@${opsmanfqdn}:/home/ubuntu/bosh-for-pcf.yml"
 # upload private key for BOSH to opsman vm
@@ -167,7 +168,7 @@ $localStemcell = RunLinuxCmd -username $userName -password $passwd -ip $publicIP
 $index = $localStemcell.IndexOf('bosh-stemcell')
 $localStemcell = $localStemcell.Substring($index)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `"s/REPLACE_WITH_YOUR_LOCAL_STEMCELL/$localStemcell/`" bosh-for-pcf.yml'"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 3600
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400 -ignoreLinuxExitCode
 
 Write-Host "        BOSH director is deployed"
 Write-Host ""
@@ -202,7 +203,7 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x deploy_pcf_on_azure.sh'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x upload_releases.sh'"
 
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 7200
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800 -ignoreLinuxExitCode
 $chk = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'cat deploy-PCF.log | grep Deployed | grep p-bosh | grep pcf-on-azure | wc -l'"
 $chk = $chk[-1]
 if($chk -eq '1')
