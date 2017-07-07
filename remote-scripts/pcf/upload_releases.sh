@@ -8,6 +8,7 @@ download_token=$2
 
 # download releases
 rm -rf releases/
+sudo apt-get update
 sudo apt-get install -y python3-pip
 pip3 install requests
 echo "Elastic Runtime: $elastic_runtime_ver"
