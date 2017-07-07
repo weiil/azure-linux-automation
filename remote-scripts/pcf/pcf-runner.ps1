@@ -162,13 +162,15 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 # upload deploy bosh script to opsman vm
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman deploy_bosh_for_pcf.sh ubuntu@${opsmanfqdn}:/home/ubuntu/deploy_bosh_for_pcf.sh"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman root_ca_certificate ubuntu@${opsmanfqdn}:/home/ubuntu/root_ca_certificate"
+# keep a long ssh connection for client
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -o StrictHostKeyChecking=no -i opsman ubuntu@${opsmanfqdn} 'sudo sed -i `"s/ClientAliveCountMax 0/ClientAliveCountMax 20/`" /etc/ssh/sshd_config;sudo /etc/init.d/ssh restart;'"
 # start the deployment of BOSH
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -o StrictHostKeyChecking=no -i opsman ubuntu@${opsmanfqdn} 'chmod a+x deploy_bosh_for_pcf.sh'"
 $localStemcell = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'ls /var/tempest/stemcells'"
 $index = $localStemcell.IndexOf('bosh-stemcell')
 $localStemcell = $localStemcell.Substring($index)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `"s/REPLACE_WITH_YOUR_LOCAL_STEMCELL/$localStemcell/`" bosh-for-pcf.yml'"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400 -ignoreLinuxExitCode
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400
 
 Write-Host "        BOSH director is deployed"
 Write-Host ""
@@ -203,7 +205,8 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x deploy_pcf_on_azure.sh'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x upload_releases.sh'"
 
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800 -ignoreLinuxExitCode
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
+
 $chk = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'cat deploy-PCF.log | grep Deployed | grep p-bosh | grep pcf-on-azure | wc -l'"
 $chk = $chk[-1]
 if($chk -eq '1')
