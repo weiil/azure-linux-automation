@@ -123,7 +123,7 @@ RemoteCopy -uploadTo $publicIP -port $port -files '.\params.json' -username $use
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./prepare-pcf-infrastructure-on-azure.sh params.json >prepare-pcf-infrastructure-on-azure.log 2>&1" -runMaxAllowedTime 2400
 # get ops man FQDN
 $opsmanfqdn = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i fqdn | awk {'print `$4'}"
-Write-Host "        Infrastructure of PCF on Azure is created"
+Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Infrastructure of PCF on Azure is created"
 Write-Host "          RG: $resourceGroup_PCF"
 Write-Host "          OPS MAN VM: pcf-ops-man"
 Write-Host "          OPS MAN DNS: $opsmanfqdn"
@@ -172,7 +172,7 @@ $localStemcell = $localStemcell.Substring($index)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `"s/REPLACE_WITH_YOUR_LOCAL_STEMCELL/$localStemcell/`" bosh-for-pcf.yml'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400
 
-Write-Host "        BOSH director is deployed"
+Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BOSH director is deployed"
 Write-Host ""
 
 Write-Host "  7. Deploy PCF on Azure"
@@ -207,20 +207,50 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
 
+$pcf_deployed = $false
 $chk = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'cat deploy-PCF.log | grep Deployed | grep p-bosh | grep pcf-on-azure | wc -l'"
 $chk = $chk[-1]
 if($chk -eq '1')
 {
-    Write-Host "        PCF is deployed successfully"
+    Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PCF is deployed successfully"
+    $pcf_deployed = $true
 }
 else
 {
-    Write-Host "        PCF is deployed failed"
+    Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PCF is deployed failed"
 }
-
 Write-Host ""
 
+Write-Host "  8. Tests"
+# upload scripts
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\start_tests.sh' -username $userName -password $passwd -upload
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman start_tests.sh ubuntu@${opsmanfqdn}:/home/ubuntu/start_tests.sh"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x start_tests.sh'"
+## smoke-tests
+if($env:SmokeTest -eq $true)
+{
+    Write-Host "Start smoke tests"
+    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke $director_passwd'"
+}
+
 ## TODO: CAT
+if($env:AcceptanceTest -eq $true)
+{
+    Write-Host "Start acceptance tests"
+    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance $director_passwd'"
+}
 
+## Collect logs and manifests
+Write-Host "  9. Archive the artifacts"
+# manifests
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "mkdir ~/collect"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.yml /home/azureuser/collect/"
+# logs (pcf, bosh, infra)
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.log /home/azureuser/collect/"
+# releases and stemcell (releases.txt, stemcell.txt)
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.txt /home/azureuser/collect/"
+# tests (smoke, acceptance)
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/smoke-tests.*.tgz /home/azureuser/collect/"
 
-
+# download files to slave
+RemoteCopy -download -downloadFrom $publicIP -files "/home/azureuser/collect/*" -downloadTo ../CI -port $port -username $userName -password $passwd
