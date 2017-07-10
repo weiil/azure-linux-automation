@@ -231,6 +231,16 @@ if($env:SmokeTest -eq $true)
 {
     Write-Host "Start smoke tests"
     RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke $director_passwd'"
+    $chk_smoke = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep smoke_test_pass smoke-tests.log | wc -l'"
+    $chk_smoke = $chk_smoke[-1]
+    if($chk_smoke -eq '1')
+    {
+      Write-Host "  smoke tests pass!"
+    }
+    else 
+    {
+      Write-Host "  smoke tests failed!" 
+    }
 }
 
 ## TODO: CAT
@@ -238,7 +248,18 @@ if($env:AcceptanceTest -eq $true)
 {
     Write-Host "Start acceptance tests"
     RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance $director_passwd'"
+    $chk_acceptance = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep cat_test_pass acceptance-tests.log | wc -l'"
+    $chk_acceptance = $chk_acceptance[-1]
+    if($chk_acceptance -eq '1')
+    {
+      Write-Host "  acceptance tests pass!"
+    }
+    else 
+    {
+      Write-Host "  acceptance tests failed!" 
+    }
 }
+Write-Host ""
 
 ## Collect logs and manifests
 Write-Host "  9. Archive the artifacts"
@@ -250,7 +271,7 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 # releases and stemcell (releases.txt, stemcell.txt)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.txt /home/azureuser/collect/"
 # tests (smoke, acceptance)
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/smoke-tests.*.tgz /home/azureuser/collect/"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*-tests.*.tgz /home/azureuser/collect/"
 
 # download files to slave
 RemoteCopy -download -downloadFrom $publicIP -files "/home/azureuser/collect/*" -downloadTo ../CI -port $port -username $userName -password $passwd

@@ -14,7 +14,7 @@ ${passwd}
 EndOfessage
 
 if [ $test = 'smoke' ]; then
-    { bosh run errand smoke_tests --download-logs --logs-dir ~ && echo smoke_test_pass || echo smoke_test_fail; } | tee smoke-tests.log
+    { bosh run errand smoke-tests --download-logs --logs-dir ~ && echo smoke_test_pass || echo smoke_test_fail; } | tee smoke-tests.log
 else [ $test = 'acceptance' ]
-    { bosh run errand acceptance_tests --download-logs --logs-dir ~ && echo cat_test_pass || echo cat_test_fail; } | tee acceptance-tests.log
+    { bosh run errand acceptance-tests --download-logs --logs-dir ~ && echo cat_test_pass || echo cat_test_fail; } | tee acceptance-tests.log
 fi
