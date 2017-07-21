@@ -171,6 +171,13 @@ $index = $localStemcell.IndexOf('bosh-stemcell')
 $localStemcell = $localStemcell.Substring($index)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `"s/REPLACE_WITH_YOUR_LOCAL_STEMCELL/$localStemcell/`" bosh-for-pcf.yml'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400
+# powerdns configuration here
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\inject_xip_io_records.py' -username $userName -password $passwd -upload
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman inject_xip_io_records.py ubuntu@${opsmanfqdn}:/home/ubuntu/inject_xip_io_records.py"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo apt-get install -y python2.7-dev'"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo apt-get install -y python-pip'"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'pip install PyGreSQL'"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo python /home/ubuntu/inject_xip_io_records.py bosh-for-pcf.yml $lb_ip'"
 
 Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BOSH director is deployed"
 Write-Host ""
