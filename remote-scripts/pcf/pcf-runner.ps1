@@ -25,6 +25,78 @@ $elasticRuntimeVersion = $env:ElasticRuntimeRelease.Trim()
 $location = $env:Location.Trim()
 $pivotalDownloadAPIToken = $env:Token.Trim()
 $passwd = $env:DevCliVMPassword.Trim()
+$cpi_v = $env:CPI.Trim()
+
+# azure cpi
+Function GetLatest([string]$url)
+{
+  try
+  {
+    $response = Invoke-WebRequest -Uri $url -Method Head
+    if($url -match "stemcell")
+    {
+      $latest = $response.BaseResponse.ResponseUri.OriginalString
+      if($latest -match "stemcell-(\d+.?\d+)")
+      {
+          return $Matches.1
+      }
+      else
+      {
+          Write-Host "Failed to catch version for $url"
+          return $null
+      }
+    }
+    else
+    {
+      $latest = $($($response.Headers.'Content-Disposition').Split() | Where-Object {$_.contains('filename')}).Split('=')[-1]
+      if($latest -match "\d+.?\d+")
+      {
+          return $Matches.0
+      }
+      else
+      {
+          Write-Host "Failed to catch version for $url"
+          return $null
+      }
+    }
+  }
+  catch
+  {
+    $ErrorMessage =  $_.Exception.Message
+    Write-Host "EXCEPTION : $ErrorMessage" 
+    Write-Host "Get latest version failed for $url"
+  }
+}
+
+Function GetFileHash([string]$url)
+{
+  try
+  {
+    $outfile = $url.Split('?')[0].Split('/')[-1]
+    Invoke-WebRequest -Uri $url -OutFile $outfile
+    Sleep -Seconds 10
+    $sha1 = $(Get-FileHash -Algorithm SHA1 -Path $outfile).Hash.ToLower()
+    return $sha1
+  }
+  catch 
+  {
+    $ErrorMessage =  $_.Exception.Message
+    Write-Host "EXCEPTION : $ErrorMessage" 
+    Write-Host "Get file hash failed."
+  }
+  finally
+  {
+    Remove-Item $outfile -ErrorAction SilentlyContinue
+  }
+}
+
+$global_latest_bosh_azure_cpi_url = "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-azure-cpi-release"
+if($cpi_v -eq 'latest')
+{
+  $cpi_v = GetLatest $global_latest_bosh_azure_cpi_url
+}
+$cpi_url = $global_latest_bosh_azure_cpi_url + "?v=" + $cpi_v
+$cpi_sha1 = GetFileHash($cpi_url)
 
 
 Write-Host "  1. Login Azure with Service Principle"
@@ -139,6 +211,9 @@ $filepath = "..\CI\Cloud\CF\bosh-for-pcf.yml"
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CLIENT_SECRET',$clientSecret) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_RESOURCE_GROUP',$resourceGroup_PCF) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_SSH_PUBLIC_KEY',$sshKey) | Set-Content $filepath
+Write-Host "set BOSH Azure CPI v$cpi_v"
+(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_URL',$cpi_url) | Set-Content $filepath
+(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_SHA1',$cpi_sha1) | Set-Content $filepath
 # upload bosh manifest to dev vm
 RemoteCopy -uploadTo $publicIP -port $port -files $filepath -username $userName -password $passwd -upload
 
