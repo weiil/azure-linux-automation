@@ -212,7 +212,7 @@ $filepath = "..\CI\Cloud\CF\bosh-for-pcf.yml"
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_RESOURCE_GROUP',$resourceGroup_PCF) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_SSH_PUBLIC_KEY',$sshKey) | Set-Content $filepath
 Write-Host "set BOSH Azure CPI v$cpi_v"
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_URL',$cpi_url) | Set-Content $filepath
+(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_URL',$cpi_v) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_SHA1',$cpi_sha1) | Set-Content $filepath
 # upload bosh manifest to dev vm
 RemoteCopy -uploadTo $publicIP -port $port -files $filepath -username $userName -password $passwd -upload
