@@ -358,3 +358,16 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 
 # download files to slave
 RemoteCopy -download -downloadFrom $publicIP -files "/home/azureuser/collect/*" -downloadTo ../CI -port $port -username $userName -password $passwd
+
+Write-Host ""
+Write-Host "  10. Clean resources"
+if ($chk_smoke -eq '1' -and $chk_acceptance -eq '1')
+{
+  Write-Host "  Tests are all PASS, resource groups will be deleted."
+  Remove-AzureRmResourceGroup -Name $resourceGroup_PCF -Force
+  Remove-AzureRmResourceGroup -Name $resourceGroup -Force
+}
+else
+{
+  Write-Host "  Some tests are failed. resource groups will be kept." 
+}
