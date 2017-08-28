@@ -110,8 +110,7 @@ class OpsMan(object):
             'Content-Type': 'application/json',
         } 
 
-    def download_elastic(self, prod_name='cf', prod_ver):
-        # set pivotal network token
+    def set_pivotal_net_token(self):
         print('set pivotal network token')
         url = "{}/api/v0/settings/pivotal_network_settings".format(self.base)
         data = '{{ "pivotal_network_settings": {{ "api_token": "{}" }}}}'.format(self.pivotal_net_token)
@@ -120,10 +119,13 @@ class OpsMan(object):
             print('=> successfully')
         else:
             print('=> failed')
-        # download
-        # check progressing
-    
+
     def check_download(self, downloadId):
+        url = "{}/api/v0/pivotal_network/downloads/{}".format(self.base, downloadId)
+        requests.get(url, headers=self.requests_headers, verify=False)
+
+
+    def download_elastic(self, prod_name='cf', prod_ver):
         pass
 
     def add_elastic(self, prod_name='cf', prod_ver):
