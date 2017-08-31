@@ -7,6 +7,7 @@ import os
 import pexpect
 import subprocess
 import json
+import glob
 from pprint import pprint
 
 # params
@@ -19,20 +20,23 @@ with open(sys.argv[1]) as f:
     pivotal_net_token = params['pivotalNetToken']
     lb_ip = params['lb_ip']
 
-class CredentialManager(object):
-    def __init__(self):
-        pass
-
 class OpsMan(object):
-    def __init__(self, baseUrl):
-        self.is_uaa_setup = False
+    def __init__(self, baseUrl, login_admin, login_pwd, decryption_passphrase):
         self.base = baseUrl
+        self.admin_user = login_admin
+        self.admin_pwd = login_pwd
+        self.decryption_passphrase = decryption_passphrase
+        self.is_uaa_setup = False
         self._uaa_token = None
+
+        if not self.is_uaa_setup:
+            self.setup_uaa()
+        self.fetch_uaa_token()
 
     def setup_uaa(self):
         print("set uaa")
         url = "{}/api/v0/setup".format(self.base)
-        data = '{ "setup": {\n' + '    "decryption_passphrase": "' + decryption_passphrase + '",\n' + '    "decryption_passphrase_confirmation": "' + decryption_passphrase + '",\n' + '    "eula_accepted": "true",\n' + '    "identity_provider": "internal",\n' + '    "admin_user_name":  "' + admin_user + '",\n' + '    "admin_password": "' + admin_pwd + '",\n' + '    "admin_password_confirmation": "' + admin_pwd + '",\n' + '    "no_proxy": "127.0.0.1"\n  } }'
+        data = '{ "setup": {\n' + '    "decryption_passphrase": "' + self.decryption_passphrase + '",\n' + '    "decryption_passphrase_confirmation": "' + self.decryption_passphrase + '",\n' + '    "eula_accepted": "true",\n' + '    "identity_provider": "internal",\n' + '    "admin_user_name":  "' + self.admin_user + '",\n' + '    "admin_password": "' + self.admin_pwd + '",\n' + '    "admin_password_confirmation": "' + self.admin_pwd + '",\n' + '    "no_proxy": "127.0.0.1"\n  } }'
         headers = {
             "Content-Type": "application/json",
         }
@@ -47,8 +51,6 @@ class OpsMan(object):
 
     def fetch_uaa_token(self):
         print("get uaa authorization token")
-        if not self.is_uaa_setup:
-            self.setup_uaa()
         if not self._uaa_token:
             rtn = os.system('which uaac')
             if rtn == 0:
@@ -67,10 +69,10 @@ class OpsMan(object):
                     child.sendline("")
                     index = child.expect(["User name:(?i)", pexpect.EOF, pexpect.TIMEOUT])
                     if index == 0 :
-                        child.sendline(admin_user)
+                        child.sendline(self.admin_user)
                         index = child.expect(["Password:(?i)", pexpect.EOF, pexpect.TIMEOUT])
                         if index == 0:
-                            child.sendline(admin_pwd)
+                            child.sendline(self.admin_pwd)
                             index = child.expect(["Successfully fetched", "error response"])
                             if index == 0:
                                 print('successfully fetch token')
@@ -110,6 +112,7 @@ class OpsMan(object):
             'Content-Type': 'application/json',
         } 
 
+    '''
     def set_pivotal_net_token(self):
         print('set pivotal network token')
         url = "{}/api/v0/settings/pivotal_network_settings".format(self.base)
@@ -120,17 +123,38 @@ class OpsMan(object):
         else:
             print('=> failed')
 
+    
     def check_download(self, downloadId):
         url = "{}/api/v0/pivotal_network/downloads/{}".format(self.base, downloadId)
         requests.get(url, headers=self.requests_headers, verify=False)
+    '''
 
+    def upload_elastic(self):
+        # product should be downloaded yet when call it
+        print('upload elastic runtime to ops man')
+        url = "{}/api/v0/available_products".format(self.base)
+        files = glob.glob('*.pivotal')
+        if len(files) == 0:
+            raise Exception('probably elastic runtime tile download failed')
+        files = [
+            ('product[file]', open('/home/ubuntu/{}'.format(files[0]), 'rb')),
+        ]
+        res = requests.post(url, headers=self.requests_headers, files=files, verify=False)
+        if res.status_code == 200:
+            print('=> successfully')
+        else:
+            print('=> failed')
 
-    def download_elastic(self, prod_name='cf', prod_ver):
-        pass
+    def add_elastic(self, prod_ver):
+        print("add elastic runtime to ops man")
+        url = "{}/api/v0/staged/products".format(self.base)
+        data = '{{"name": "cf", "product_version": "{}"}}'.format(prod_ver)
+        res = requests.post(url, headers=self.requests_headers, data=data, verify=False)
+        if res.status_code == 200:
+            print('=> successfully')
+        else:
+            print('=> failed')
 
-    def add_elastic(self, prod_name='cf', prod_ver):
-        pass
-    
     def get_elastic_guid(self):
         url = "{}/api/v0/staged/products".format(self.base)
         res = requests.get(url, headers=self.requests_headers)
@@ -267,8 +291,8 @@ class OpsMan(object):
                 print("config error: {} - {}".format(guid_job, res.text))
         print("=> done")
 
-    def get_elastic_manifest(self):
-        print('DOWNLOAD MANIFEST OF PCF')
+    def generate_elastic_manifest(self):
+        print('GENERATE MANIFEST OF PCF')
         cf_guid = self.get_elastic_guid()
         url = "{}/api/v0/staged/products/{}/manifest".format(self.opsman, cf_guid)
         res = requests.get(url, headers=self.requests_headers, verify=False)
@@ -279,19 +303,7 @@ class OpsMan(object):
         else:
             print("=> failed")
 
-    def get_cloud_config(self):
-        print('DOWNLOAD CLOUD-CONFIG')
-        url = "{}/api/v0/staged/cloud_config".format(self.opsman)
-        res = requests.get(url, headers=self.requests_headers, verify=False)
-        if res.status_code == 200:
-            print('=> successfully')
-            with open('pcf-cloud-config.yml','w') as f:
-                yaml.dump(res.json['cloud_config'], f, default_flow_style=False)
-        else:
-            print("=> failed")
-
-
-    def fetch_director_properties(token):
+    def fetch_director_properties(self, token):
         properties = None
         print('fetch director properties')
         url = "{}/api/v0/staged/director/properties".format(opsman)
@@ -304,45 +316,45 @@ class OpsMan(object):
             print('fetch director properties failed')
         return properties
 
-    def update_direcotr_iaas(token):
-        print('update director iaas properties')
-        url = "{}/api/v0/staged/director/properties".format(opsman)
-        headers = {
-            'Authorization': 'Bearer {}'.format(token),
-            'Content-Type': 'application/json',
-        }
-
+    def stage_director(self):
+        print('STAGE DIRECTOR')
+        url = "{}/api/v0/staged/director/properties".format(self.base)
+        # Azure Config
+        print('Azure Config')
         data_iaas = '{{\n                "iaas_configuration": {{\n                  "subscription_id": "{subscription_id}",\n                  "tenant_id": "{tenant_id}",\n                  "client_id": "{client_id}",\n                  "client_secret": "{client_secret}",\n                  "resource_group_name": "{resource_group_name}",\n                  "bosh_storage_account_name": "{bosh_storage_account_name}",\n                  "default_security_group": "pcf-nsg",\n                  "ssh_public_key": "{ssh_public_key}",\n                  "ssh_private_key": "{ssh_private_key}",\n                  "cloud_storage_type": "managed_disks",\n                  "storage_account_type": "Premium_LRS",\n                  "environment": "AzureCloud"\n                }}\n        }}'.format_map(params)
-
-        data_director = '{\n                "director_configuration": {\n                  "ntp_servers_string": "time-c.nist.gov",\n                  "metrics_ip": "1.2.3.4",\n                  "resurrector_enabled": true,\n                  "max_threads": 1,\n                  "database_type": "internal",\n                  "blobstore_type": "local"\n                }\n        }'
-
-        data_security_syslog = '{\n                "security_configuration": {\n                  "trusted_certificates": "",\n                  "generate_vm_passwords": true\n                },\n                "syslog_configuration": {\n                  "enabled": false\n                }\n        }'
-
-
-        print(data_iaas)
-        print(data_director)
-        print(data_security_syslog)
-
-        res = requests.put(url, headers=headers, data=data_iaas, verify=False)
+        res = requests.put(url, headers=self.requests_headers, data=data_iaas, verify=False)
         if res.status_code == 200:
             print('update iaas part successfully')
         else:
             print('update iaas part failed and http code: {}'.format(res.status_code))
 
-        res = requests.put(url, headers=headers, data=data_director, verify=False)
+        # Director Config
+        print('Director Config')
+        data_director = '{\n                "director_configuration": {\n                  "ntp_servers_string": "time-c.nist.gov",\n                  "metrics_ip": "1.2.3.4",\n                  "resurrector_enabled": true,\n                  "max_threads": 1,\n                  "database_type": "internal",\n                  "blobstore_type": "local"\n                }\n        }'
+        res = requests.put(url, headers=self.requests_headers, data=data_director, verify=False)
         if res.status_code == 200:
             print('update director part successfully')
         else:
             print('update director part failed and http code: {}'.format(res.status_code))
-        
-        res = requests.put(url, headers=headers, data=data_security_syslog, verify=False)
+
+        # Security and Syslog
+        print('Security and Syslog')
+        data_security_syslog = '{\n                "security_configuration": {\n                  "trusted_certificates": "",\n                  "generate_vm_passwords": true\n                },\n                "syslog_configuration": {\n                  "enabled": false\n                }\n        }'
+        res = requests.put(url, headers=self.requests_headers, data=data_security_syslog, verify=False)
         if res.status_code == 200:
             print('update security and syslog part successfully')
         else:
-            print('update security and syslog part failed and http code: {}'.format(res.status_code))
+            print('update security and syslog part failed and http code: {}'.format(res.status_code))        
 
-    def update_director_networks(token):
-        pass
+    def create_director_networks(token):
+        print('Create Networks')
+        url = "{}/api/v0/staged/director/networks".format(self.base)
+        data = '{\n                "icmp_checks_enabled": false,\n                "networks": [\n                  {\n                    "name": "default",\n                    "service_network": false,\n                    "subnets": [{\n                      "iaas_identifier": "pcf-net/pcf",\n                      "cidr": "10.0.0.0/20",\n                      "reserved_ip_ranges": "10.0.0.1-10.0.0.9",\n                      "dns": "168.63.129.16",\n                      "gateway": "10.0.0.1",\n                      "availability_zone_names": [null-az]\n                    }]\n                  }\n                ]\n              }'
+        res = requests.put(url, headers=self.requests_headers, data=data, verify=False)
+        if res.status_code == 200:
+            print('create network successfully')
+        else:
+            print('create network failed and http code: {}'.format(res.status_code))        
 
     def assign_director_networks(token):
         print("assign networks for director")
@@ -358,8 +370,8 @@ class OpsMan(object):
         else:
             print('assign failed')
 
-    def fetch_director_manifest(token):
-        print("fetch manifest for director")
+    def generate_director_manifest(token):
+        print("GENERATE MANIFEST OF DIRECTOR")
         url = "{}/api/v0/staged/director/manifest".format(opsman)
         headers = {
             'Authorization': 'Bearer {}'.format(token),
@@ -371,27 +383,16 @@ class OpsMan(object):
         else:
             print('fetch failed')
 
-    def fetch_cloud_config(token):
-        print("fetch cloud config")
-        url = "{}/api/v0/staged/director/cloud_config".format(opsman)
-        headers = {
-            'Authorization': 'Bearer {}'.format(token),
-            'Content-Type': 'application/json',
-        }
-        res = requests.get(url, headers=headers, verify=False)
-
-    def stage_bosh(token):
-        update_direcotr_iaas(token)
-        update_director_networks(token)
-        
-    def stage_pcf():
-        pass
-
-    def gen_manifest_bosh():
-        pass
-
-    def gen_manifest_pcf():
-        pass
+    def generate_cloud_config(self):
+        print('DOWNLOAD CLOUD-CONFIG')
+        url = "{}/api/v0/staged/cloud_config".format(self.opsman)
+        res = requests.get(url, headers=self.requests_headers, verify=False)
+        if res.status_code == 200:
+            print('=> successfully')
+            with open('pcf-cloud-config.yml','w') as f:
+                yaml.dump(res.json['cloud_config'], f, default_flow_style=False)
+        else:
+            print("=> failed")
 
 
 class Pcf(object):
