@@ -26,6 +26,10 @@ $location = $env:Location.Trim()
 $pivotalDownloadAPIToken = $env:Token.Trim()
 $passwd = $env:DevCliVMPassword.Trim()
 $cpi_v = $env:CPI.Trim()
+$uaa_username = $env:UaaUserName.Trim()
+$uaa_password = $env:UaaPassword.Trim()
+$cloud_storage_type = $env:CloudStorageType.Trim()
+$storage_account_type = $env:StorageAccountType.Trim()
 
 # azure cpi
 Function GetLatest([string]$url)
@@ -175,7 +179,9 @@ Write-Host "          VM: $vmName"
 Write-Host "          SSH: ${userName}@$publicIP"
 Write-Host ""
 
-Write-Host "  3. Install azure cli on dev VM"
+Write-Host "  3. Preparation on dev VM"
+# install azure cli
+Write-Host "        install azure cli"
 $port = 22
 $out = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -"
 $out = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "sudo apt-get install -y nodejs"
@@ -184,111 +190,129 @@ $out = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $po
 Write-Host "        azure-cli $out was installed"
 Write-Host ""
 
-Write-Host "  4. Prepare to deploy PCF on Azure"
+Write-Host "        upload scripts and parameter files"
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\prepare-pcf-infrastructure-on-azure.sh' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "chmod a+x prepare-pcf-infrastructure-on-azure.sh"
+# params
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh-keygen -t rsa -f opsman -C ubuntu -N ''"
-$sshKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman.pub"
+$sshPublicKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman.pub"
+$sshPrivateKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman"
+# get storage prefix
+$prefix = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i 'storage account prefix' | awk {'print `$7'}"
+$prefix = $prefix.Substring(1)
+$prefix = '*' + $prefix + '*'
+# gen params.json
+$p = @{subscriptionId=$subscriptionId; `
+  tenantId=$tenantId; `
+  clientId=$clientId; `
+  clientSecret=$clientSecret; `
+  sshKey=$sshPublicKey; `
+  sshPrivateKey=$sshPrivateKey; `
+  resourceGroup=$resourceGroup_PCF; `
+  location=$location; `
+  boshStorage=$boshStorage; `
+  opsmanVersion=$opsmanVersion; `
+  cloudStorageType=$cloud_storage_type; `
+  storageAccountType=$storage_account_type; `
+  deploymentsStorageAccountName=$prefix; `
+  uaaUserName=$uaa_username; `
+  uaaPassword=$uaa_password; `
+  netToken=$pivotalDownloadAPIToken; `
+  elasticVersion=$elasticRuntimeVersion; `
+}
+$p | ConvertTo-Json | Out-File params.json -Encoding utf8
 
-@{tenantId=$tenantId;clientId=$clientId;clientSecret=$clientSecret;sshKey=$sshKey;resourceGroup=$resourceGroup_PCF;location=$location;boshStorage=$boshStorage;opsmanVersion=$opsmanVersion} | ConvertTo-Json | Out-File params.json -Encoding utf8
+# upload scripts to dev vm
 RemoteCopy -uploadTo $publicIP -port $port -files '.\params.json' -username $userName -password $passwd -upload
+
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_bosh_for_pcf.sh' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_pcf_on_azure.sh' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\gen_manifests.sh' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\start_tests.sh' -username $userName -password $passwd -upload
+
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\inject_xip_io_records.py' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\download_releases.py' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\json2yaml.py' -username $userName -password $passwd -upload
+
+RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\root_ca_certificate' -username $userName -password $passwd -upload
+Write-Host ""
+
+Write-Host "        grant exec permission to scripts"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "chmod a+x *.sh"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "chmod a+x *.py"
+Write-Host ""
+
+Write-Host "  4. Deploy PCF Infrastructure on Azure"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./prepare-pcf-infrastructure-on-azure.sh params.json >prepare-pcf-infrastructure-on-azure.log 2>&1" -runMaxAllowedTime 2400
 # get ops man FQDN
 $opsmanfqdn = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i fqdn | awk {'print `$4'}"
+# get pcf-lb-ip address
+$lb_ip = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure network public-ip show $resourceGroup_PCF pcf-lb-ip --json | jq .ipAddress | tr -d '`"'"
 Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Infrastructure of PCF on Azure is created"
 Write-Host "          RG: $resourceGroup_PCF"
 Write-Host "          OPS MAN VM: pcf-ops-man"
 Write-Host "          OPS MAN DNS: $opsmanfqdn"
+Write-Host "          VIP of PCF LB is $lb_ip"
 Write-Host ""
 
-Write-Host "  5. Configure manifest of BOSH"
-# upload manifests and scripts to dev vm
-$filepath = "..\CI\Cloud\CF\bosh-for-pcf.yml"
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_STORAGE',$boshStorage) | Set-Content $filepath
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_SUBSCRIPTION_ID',$subscriptionId) | Set-Content $filepath
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_TENANT_ID',$tenantId) | Set-Content $filepath
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CLIENT_ID',$clientId) | Set-Content $filepath
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CLIENT_SECRET',$clientSecret) | Set-Content $filepath
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_RESOURCE_GROUP',$resourceGroup_PCF) | Set-Content $filepath
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_SSH_PUBLIC_KEY',$sshKey) | Set-Content $filepath
+Write-Host "  5. Generate cloud-config, manifests of BOSH and PCF"
+$opsmanurl = "https://$opsmanfqdn"
+# generate manifests
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./gen_manifests.sh params.json $opsmanurl $lb_ip"
+# specify the CPI in BOSH
 Write-Host "set BOSH Azure CPI v$cpi_v"
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_URL',$cpi_v) | Set-Content $filepath
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_SHA1',$cpi_sha1) | Set-Content $filepath
-# upload bosh manifest to dev vm
-RemoteCopy -uploadTo $publicIP -port $port -files $filepath -username $userName -password $passwd -upload
-
-# upload deploy_bosh_for_pcf.sh to dev vm
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_bosh_for_pcf.sh' -username $userName -password $passwd -upload
-RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\root_ca_certificate' -username $userName -password $passwd -upload
-# upload pcf manifest to dev vm
-RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\pcf-on-azure.yml' -username $userName -password $passwd -upload
-# upload cloud-config for PCF on azure
-RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\pcf-cloud-config.yml' -username $userName -password $passwd -upload
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "sed -i 's/REPLACE_WITH_YOUR_CPI_URL/$cpi_v/g' bosh-for-pcf.yml"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "sed -i 's/REPLACE_WITH_YOUR_CPI_SHA1/$cpi_sha1/g' bosh-for-pcf.yml"
 Write-Host ""
 
 Write-Host "  6. Deploy BOSH director"
-# get pcf-lb-ip address
-$lb_ip = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure network public-ip show $resourceGroup_PCF pcf-lb-ip --json | jq .ipAddress | tr -d '`"'"
-Write-Host "Public IP address of PCF LB is $lb_ip"
-# upload bosh manifest from dev vm to opsman vm
+# upload
+Write-Host "        upload scripts, yaml and parameter files"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman bosh-for-pcf.yml ubuntu@${opsmanfqdn}:/home/ubuntu/bosh-for-pcf.yml"
-# upload private key for BOSH to opsman vm
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman opsman ubuntu@${opsmanfqdn}:/home/ubuntu/bosh"
-# upload deploy bosh script to opsman vm
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-cloud-config.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-cloud-config.yml"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-on-azure.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-on-azure.yml"
+
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman deploy_bosh_for_pcf.sh ubuntu@${opsmanfqdn}:/home/ubuntu/deploy_bosh_for_pcf.sh"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman root_ca_certificate ubuntu@${opsmanfqdn}:/home/ubuntu/root_ca_certificate"
-# keep a long ssh connection for client
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -o StrictHostKeyChecking=no -i opsman ubuntu@${opsmanfqdn} 'sudo sed -i `"s/ClientAliveCountMax 0/ClientAliveCountMax 20/`" /etc/ssh/sshd_config;sudo /etc/init.d/ssh restart;'"
-# start the deployment of BOSH
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -o StrictHostKeyChecking=no -i opsman ubuntu@${opsmanfqdn} 'chmod a+x deploy_bosh_for_pcf.sh'"
-$localStemcell = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'ls /var/tempest/stemcells'"
-$index = $localStemcell.IndexOf('bosh-stemcell')
-$localStemcell = $localStemcell.Substring($index)
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `"s/REPLACE_WITH_YOUR_LOCAL_STEMCELL/$localStemcell/`" bosh-for-pcf.yml'"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400
-# powerdns configuration here
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\inject_xip_io_records.py' -username $userName -password $passwd -upload
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman deploy_pcf_on_azure.sh ubuntu@${opsmanfqdn}:/home/ubuntu/deploy_pcf_on_azure.sh"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman start_tests.sh ubuntu@${opsmanfqdn}:/home/ubuntu/start_tests.sh"
+
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman download_releases.py ubuntu@${opsmanfqdn}:/home/ubuntu/download_releases.py"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman inject_xip_io_records.py ubuntu@${opsmanfqdn}:/home/ubuntu/inject_xip_io_records.py"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman root_ca_certificate ubuntu@${opsmanfqdn}:/home/ubuntu/root_ca_certificate"
+
+Write-Host ""
+
+Write-Host "        grant exec permission to scripts(opsman)"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -o StrictHostKeyChecking=no -i opsman ubuntu@${opsmanfqdn} 'chmod a+x *.sh'"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -o StrictHostKeyChecking=no -i opsman ubuntu@${opsmanfqdn} 'chmod a+x *.py'"
+Write-Host ""
+
+# ssh alive
+Write-Host "        keep a long ssh connection for client"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -o StrictHostKeyChecking=no -i opsman ubuntu@${opsmanfqdn} 'sudo sed -i `"s/ClientAliveCountMax 0/ClientAliveCountMax 20/`" /etc/ssh/sshd_config;sudo /etc/init.d/ssh restart;'"
+Write-Host ""
+
+# start the deployment of BOSH
+Write-Host "        start deployment"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400
+Write-Host ""
+
+# powerdns configuration here
+Write-Host "        apply powerdns"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo apt-get update'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo apt-get install -y python2.7-dev'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo apt-get install -y python-pip'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo pip install PyGreSQL'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sudo python /home/ubuntu/inject_xip_io_records.py bosh-for-pcf.yml $lb_ip'"
+Write-Host ""
 
 Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BOSH director is deployed"
 Write-Host ""
 
 Write-Host "  7. Deploy PCF on Azure"
-# get storage prefix
-$prefix = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i 'storage account prefix' | awk {'print `$7'}"
-# update cloud-config then upload to opsman vm
-$prefix = $prefix.Substring(1)
-$prefix = '*' + $prefix + '*'
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "sed -i 's/REPLACE_WITH_YOUR_STORAGE/$prefix/g' pcf-cloud-config.yml"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-cloud-config.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-cloud-config.yml"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-on-azure.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-on-azure.yml"
-
-# upload script for download releases
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\download_releases.py' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman download_releases.py ubuntu@${opsmanfqdn}:/home/ubuntu/download_releases.py"
-
-# upload script for upload releases
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\upload_releases.sh' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman upload_releases.sh ubuntu@${opsmanfqdn}:/home/ubuntu/upload_releases.sh"
-
-# upload scropt for get stemcell-version information for a elastic runtime release
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\get_stemcell_version.py' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman get_stemcell_version.py ubuntu@${opsmanfqdn}:/home/ubuntu/get_stemcell_version.py"
-
-# upload deploy_pcf_on_azure.sh
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_pcf_on_azure.sh' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman deploy_pcf_on_azure.sh ubuntu@${opsmanfqdn}:/home/ubuntu/deploy_pcf_on_azure.sh"
-
-# update manifest of pcf according to elastic runtime version and start the PCF deployment
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x deploy_pcf_on_azure.sh'"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x upload_releases.sh'"
-
+# start the deployment of PCF
+Write-Host "        start deployment"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
+Write-Host ""
 
 $pcf_deployed = $false
 $chk = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'cat deploy-PCF.log | grep Deployed | grep p-bosh | grep pcf-on-azure | wc -l'"
@@ -305,41 +329,37 @@ else
 Write-Host ""
 
 Write-Host "  8. Tests"
-# upload scripts
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\start_tests.sh' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman start_tests.sh ubuntu@${opsmanfqdn}:/home/ubuntu/start_tests.sh"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x start_tests.sh'"
-## smoke-tests
+# smoke-tests
 if($env:SmokeTest -eq $true)
 {
-    Write-Host "Start smoke tests"
+    Write-Host "        Start smoke tests"
     RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke $director_passwd'" -runMaxAllowedTime 3600
     $chk_smoke = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep smoke_test_pass smoke-tests.log | wc -l'"
     $chk_smoke = $chk_smoke[-1]
     if($chk_smoke -eq '1')
     {
-      Write-Host "  smoke tests pass!"
+      Write-Host "          smoke tests pass!"
     }
     else 
     {
-      Write-Host "  smoke tests failed!" 
+      Write-Host "          smoke tests failed!" 
     }
 }
 
 ## TODO: CAT
 if($env:AcceptanceTest -eq $true)
 {
-    Write-Host "Start acceptance tests"
+    Write-Host "        Start acceptance tests"
     RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance $director_passwd'" -runMaxAllowedTime 7200
     $chk_acceptance = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep cat_test_pass acceptance-tests.log | wc -l'"
     $chk_acceptance = $chk_acceptance[-1]
     if($chk_acceptance -eq '1')
     {
-      Write-Host "  acceptance tests pass!"
+      Write-Host "          acceptance tests pass!"
     }
     else 
     {
-      Write-Host "  acceptance tests failed!" 
+      Write-Host "          acceptance tests failed!" 
     }
 }
 Write-Host ""
@@ -363,11 +383,11 @@ Write-Host ""
 Write-Host "  10. Clean resources"
 if ($chk_smoke -eq '1' -and $chk_acceptance -eq '1')
 {
-  Write-Host "  Tests are all PASS, resource groups will be deleted."
+  Write-Host "        Tests are all PASS, resource groups will be deleted."
   Remove-AzureRmResourceGroup -Name $resourceGroup_PCF -Force
   Remove-AzureRmResourceGroup -Name $resourceGroup -Force
 }
 else
 {
-  Write-Host "  Some tests are failed. resource groups will be kept." 
+  Write-Host "        Some tests are failed. resource groups will be kept." 
 }
