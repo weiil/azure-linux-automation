@@ -3,10 +3,7 @@ set -e
 shopt -s expand_aliases
 alias bosh='BUNDLE_GEMFILE=/home/tempest-web/tempest/web/vendor/bosh/Gemfile bundle exec bosh'
 
-lb_ip=$1
-director_passwd=$2
-elastic_runtime_ver=$3
-download_token=$4
+director_passwd=$1
 
 # target
 echo 'Target bosh director'

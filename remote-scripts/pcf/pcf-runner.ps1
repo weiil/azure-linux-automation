@@ -315,7 +315,7 @@ Write-Host ""
 Write-Host "  7. Deploy PCF on Azure"
 # start the deployment of PCF
 Write-Host "        start deployment"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $director_passwd >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
 Write-Host ""
 
 $pcf_deployed = $false
