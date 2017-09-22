@@ -79,7 +79,7 @@ sed -i "s~YOUR-RSA-PUBLIC-KEY~${PUBLIC_KEY}~g" azure-deploy-parameters.json
 sed -i "s/YOUR-TENANT-ID/${TENANT_ID}/g" azure-deploy-parameters.json
 sed -i "s/YOUR-CLIENT-ID/${CLIENT_ID}/g" azure-deploy-parameters.json
 sed -i "s/YOUR-CLIENT-SECRET/${CLIENT_SECRET}/g" azure-deploy-parameters.json
-sed -i "s/SIZE-OF-OPS-MAN-VM/Standard_F2s/g" azure-deploy-parameters.json
+sed -i "s/SIZE-OF-OPS-MAN-VM/Standard_F4s/g" azure-deploy-parameters.json
 sed -i "s/OPS-MAN-LOCATION/${LOCATION}/g" azure-deploy-parameters.json
 
 # start the deployment
