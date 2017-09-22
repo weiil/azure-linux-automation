@@ -17,17 +17,21 @@ username=`cat $1 | jq .uaaUserName | tr -d '"'`
 password=`cat $1 | jq .uaaPassword | tr -d '"'`
 elastic_ver=`cat $1 | jq .elasticVersion | tr -d '"'`
 token=`cat $1 | jq .netToken | tr -d '"'`
+decryption_passphrase=`cat $1 | jq .decryptionPassphrase | tr -d '"'`
 
 # input
 opsmanurl=$2
-$lb=$3
+lb=$3
 
 echo '----------------------------------------- Preparation -----------------------------------------'
 
+echo
 echo '######################### install dependencies'
 sudo apt-get update
+sudo apt-get install -y expect
+sudo apt-get install -y libyaml-dev
 sudo apt-get install -y python3-pip
-pip3 install pyyaml
+sudo pip3 install PyYAML
 
 # install jq if need
 sudo apt-get install -y jq
@@ -42,6 +46,7 @@ wget -q -O - https://raw.githubusercontent.com/starkandwayne/homebrew-cf/master/
 echo "deb http://apt.starkandwayne.com stable main" | sudo tee /etc/apt/sources.list.d/starkandwayne.list
 sudo apt-get update
 sudo apt-get install -y om
+echo
 
 which om
 if [ $? -eq 0 ]
@@ -52,7 +57,6 @@ else
   exit
 fi
 
-echo '######################### UAA access token'
 which uaac
 if [ $? -eq 0 ]
 then
@@ -61,7 +65,19 @@ else
   echo 'preparation/uaac: failed'
   exit
 fi
+echo
 
+echo '######################### configure uaa'
+om \
+ --target $opsmanurl \
+ -k \
+ configure-authentication \
+  --username $username \
+  --password $password \
+  --decryption-passphrase $decryption_passphrase
+echo
+
+echo '######################### uaa access token'
 uaac target "$opsmanurl/uaa" --skip-ssl-validation
 
 /usr/bin/expect <<\EOF
@@ -88,8 +104,10 @@ echo
 uaa_token=`uaac context | grep access_token | awk '{print $2}'`
 echo "UAA access token:"
 echo $uaa_token
+echo
 
 echo '----------------------------------------- Director -----------------------------------------'
+echo
 echo '######################### azure config'
 # there is a bug in om, call api directly in here
 # TODO:
@@ -115,6 +133,7 @@ curl "$opsmanurl/api/v0/staged/director/properties" \
             "environment": "AzureCloud"
           }
         }'
+echo
 
 echo '######################### director config'
 om \
@@ -126,6 +145,7 @@ om \
    --director-configuration '{
      "ntp_servers_string": "time-c.nist.gov"
    }'
+echo
 
 echo '######################### create network'
 om \
@@ -150,6 +170,7 @@ om \
     }
   ]
 }' 
+echo
 
 echo '######################### assign network'
 om \
@@ -161,6 +182,7 @@ om \
    --network-assignment '{
   "network": "default"
 }'
+echo
 
 echo '######################### fetch manifest'
 om \
@@ -172,6 +194,7 @@ om \
    --path "/api/v0/staged/director/manifest" > bosh-for-pcf.json
 
 ./json2yaml.py bosh-for-pcf.json
+echo
 
 echo '######################### fetch cloud-config'
 om \
@@ -183,11 +206,13 @@ curl \
  --path "/api/v0/staged/cloud_config" > pcf-cloud-config.json
 
 ./json2yaml.py pcf-cloud-config.json
-
+echo
 
 echo '----------------------------------------- Elastic -----------------------------------------'
+echo
 echo '######################### download'
 python3 download_releases.py elastic $elastic_ver $token
+echo
 
 echo '######################### upload'
 cf_file_name=`ls *.pivotal`
@@ -195,10 +220,12 @@ om \
 --target $opsmanurl \
 --username $username \
 --password $password \
+--request-timeout 3600 \
 -k \
 upload-product \
  --product $cf_file_name
 #### (about 24 minutes)
+echo
 
 echo '############################# stage'
 om \
@@ -209,6 +236,7 @@ om \
 stage-product \
  --product-name cf \
  --product-version $elastic_ver
+echo
 
 echo '######################### get properties'
 cf_guid=`om \
@@ -218,6 +246,8 @@ cf_guid=`om \
 -k \
 curl \
  --path /api/v0/staged/products | jq '.[] | select(.type == "cf") | .guid' | tr -d '"'`
+echo "CF GUID: $cf_guid"
+echo
 
 om \
 --target $opsmanurl \
@@ -226,8 +256,33 @@ om \
 -k \
 curl \
  --path /api/v0/staged/products/$cf_guid/properties
+echo
 
 echo '######################### configure'
+echo
+echo '<Assign Networks>'
+om \
+--target $opsmanurl \
+--username $username \
+--password $password \
+-k \
+configure-product \
+ --product-name cf \
+ --product-network '{
+"singleton_availability_zone": {
+    "name": "null"
+  },
+  "other_availability_zones": [
+    {
+      "name": "null"
+    }
+  ],
+  "network": {
+    "name": "default"
+  }
+}'
+echo
+
 echo '<Domains>'
 om \
 --target $opsmanurl \
@@ -244,6 +299,7 @@ configure-product \
           "value": "'"app.${lb}.xip.io"'"
         }
       }'
+echo
 
 echo '<Networking>'
 echo '---> generate RSA certificate'
@@ -258,6 +314,7 @@ curl \
  --data '{"domains": ["'"*.$lb.xip.io"'"]}'`
 cert=`echo $rsa | jq .certificate | tr -d '"'`
 key=`echo $rsa | jq .key | tr -d '"'`
+echo
 
 echo '---> external ssl'
 om \
@@ -281,6 +338,7 @@ configure-product \
           }
         }
       }'
+echo
 
 echo '<Application Security Groups>'
 om \
@@ -295,6 +353,7 @@ configure-product \
           "value": "X"
         }
       }'
+echo
 
 echo '<UAA>'
 echo '---> generate RSA certificate'
@@ -309,6 +368,7 @@ curl \
  --data '{"domains": ["'"*.$lb.xip.io"'"]}'`
 cert1=`echo $rsa1 | jq .certificate | tr -d '"'`
 key1=`echo $rsa1 | jq .key | tr -d '"'`
+echo
 
 echo '---> internal_mysql and service provider credentials'
 om \
@@ -329,6 +389,7 @@ configure-product \
           }
         }
       }'
+echo
 
 echo '<Internal MySQL>'
 om \
@@ -343,6 +404,7 @@ configure-product \
           "value": "v-lii@microsoft.com"
         }
       }'
+echo
 
 echo '<Errands>'
 echo '---> list current errands'
@@ -353,6 +415,7 @@ om \
 -k \
 errands \
  --product-name cf 
+echo
 
 echo '---> set errands'
 errands=("push-apps-manager" "notifications" "notifications-ui" "push-pivotal-account" "autoscaling" "autoscaling-register-broker" "nfsbrokerpush")
@@ -369,6 +432,7 @@ do
    --errand-name $errand \
    --post-deploy-state disabled
 done
+echo
 
 echo '<Resource Config>'
 om \
@@ -460,20 +524,27 @@ configure-product \
     "internet_connected": false
   }
 }'
+echo
 
 echo '<Stemcell>'
-check=`curl "$opsmanurl/products/$cf_guid/stemcells/edit" \
+echo $opsmanurl
+echo $cf_guid
+echo $uaa_token
+curl "$opsmanurl/products/$cf_guid/stemcells/edit" \
     -k \
     -X GET \
-    -H "Authorization: Bearer $uaa_token" | grep 'Go to Pivotal Network and download Stemcell'`
+    -H "Authorization: Bearer $uaa_token" > stemcell.txt
 
-if [ "$check" == "" ]
+count=`cat stemcell.txt | grep 'Go to Pivotal Network and download Stemcell' | wc -l`
+test $count -eq 0
+
+if [ $? -eq 0 ]
 then
   echo 'stemcell is ready'
 else
-  echo $check
-  stemcell_ver=echo $check | awk 'NF=NF-1{print $NF}'
-  echo 'stemcell is not ready, will download it automatically'
+  echo 'stemcell is not ready'
+  stemcell_ver=`cat stemcell.txt | grep "Go to Pivotal Network and download Stemcell" | awk 'NF=NF-1{print $NF}'`
+  echo "downloading stemcell $stemcell_ver"
   python3 download_releases.py stemcell $stemcell_ver $token
   echo 'upload stemcell'
   stemcell_file_name=`ls bosh-stemcell*.tgz`
@@ -485,6 +556,7 @@ else
       upload-stemcell \
       --stemcell $stemcell_file_name
 fi
+echo
 
 echo '############################# fetch manifest'
 om \

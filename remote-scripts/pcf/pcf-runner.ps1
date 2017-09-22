@@ -30,6 +30,7 @@ $uaa_username = $env:UaaUserName.Trim()
 $uaa_password = $env:UaaPassword.Trim()
 $cloud_storage_type = $env:CloudStorageType.Trim()
 $storage_account_type = $env:StorageAccountType.Trim()
+$decryptionPassphrase = $env:UaaDecryptionPassphrase.Trim()
 
 # azure cpi
 Function GetLatest([string]$url)
@@ -218,6 +219,7 @@ $p = @{subscriptionId=$subscriptionId; `
   uaaPassword=$uaa_password; `
   netToken=$pivotalDownloadAPIToken; `
   elasticVersion=$elasticRuntimeVersion; `
+  decryptionPassphrase=$decryptionPassphrase; `
 }
 $p | ConvertTo-Json | Out-File params.json -Encoding utf8
 
@@ -257,7 +259,7 @@ Write-Host ""
 Write-Host "  5. Generate cloud-config, manifests of BOSH and PCF"
 $opsmanurl = "https://$opsmanfqdn"
 # generate manifests
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./gen_manifests.sh params.json $opsmanurl $lb_ip"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./gen_manifests.sh params.json $opsmanurl $lb_ip | tee gen_manifests.log"
 # specify the CPI in BOSH
 Write-Host "set BOSH Azure CPI v$cpi_v"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "sed -i 's/REPLACE_WITH_YOUR_CPI_URL/$cpi_v/g' bosh-for-pcf.yml"
@@ -279,6 +281,8 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman inject_xip_io_records.py ubuntu@${opsmanfqdn}:/home/ubuntu/inject_xip_io_records.py"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman root_ca_certificate ubuntu@${opsmanfqdn}:/home/ubuntu/root_ca_certificate"
 
+# upload private key for BOSH to opsman vm
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman opsman ubuntu@${opsmanfqdn}:/home/ubuntu/bosh"
 Write-Host ""
 
 Write-Host "        grant exec permission to scripts(opsman)"
