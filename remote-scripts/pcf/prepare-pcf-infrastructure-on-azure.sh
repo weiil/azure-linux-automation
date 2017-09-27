@@ -82,6 +82,9 @@ sed -i "s/YOUR-CLIENT-SECRET/${CLIENT_SECRET}/g" azure-deploy-parameters.json
 sed -i "s/SIZE-OF-OPS-MAN-VM/Standard_F2s/g" azure-deploy-parameters.json
 sed -i "s/OPS-MAN-LOCATION/${LOCATION}/g" azure-deploy-parameters.json
 
+# switch to Standard_LRS
+sed -i "s/Premium_LRS/Standard_LRS/g" azure-deploy.json
+
 # start the deployment
 echo 'Start to deploy'
 azure group deployment create -f azure-deploy.json -e azure-deploy-parameters.json -v $RESOURCE_GROUP cfdeploy
