@@ -198,7 +198,7 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 $sshPublicKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman.pub"
 $sshPrivateKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman"
 # get storage prefix
-$prefix = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i 'storage account prefix' | awk {'print `$7'}"
+$prefix = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure login --username $clientId --password $clientSecret --service-principal --tenant $tenantId --environment AzureCloud;azure group deployment list $resourceGroup_PCF | grep -i 'storage account prefix' | awk {'print `$7'}"
 $prefix = $prefix.Substring(1)
 $prefix = '*' + $prefix + '*'
 # gen params.json
@@ -258,7 +258,7 @@ Write-Host ""
 Write-Host "  5. Generate cloud-config, manifests of BOSH and PCF"
 $opsmanurl = "https://$opsmanfqdn"
 # upload scripts to opsman vm
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman *.py *.sh params.json ubuntu@${opsmanfqdn}:/home/ubuntu/"RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-on-azure.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-on-azure.yml"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman *.py *.sh params.json ubuntu@${opsmanfqdn}:/home/ubuntu/"
 # generate manifests and cloud-config
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './gen_manifests.sh params.json $opsmanurl $lb_ip | tee gen_manifests.log'"
 # specify the CPI in BOSH
