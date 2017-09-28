@@ -197,10 +197,7 @@ RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\prepare-
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh-keygen -t rsa -f opsman -C ubuntu -N ''"
 $sshPublicKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman.pub"
 $sshPrivateKey = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cat opsman"
-# get storage prefix
-$prefix = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure login --username $clientId --password $clientSecret --service-principal --tenant $tenantId --environment AzureCloud;azure group deployment list $resourceGroup_PCF | grep -i 'storage account prefix' | awk {'print `$7'}"
-$prefix = $prefix.Substring(1)
-$prefix = '*' + $prefix + '*'
+
 # gen params.json
 $p = @{subscriptionId=$subscriptionId; `
   tenantId=$tenantId; `
@@ -214,7 +211,6 @@ $p = @{subscriptionId=$subscriptionId; `
   opsmanVersion=$opsmanVersion; `
   cloudStorageType=$cloud_storage_type; `
   storageAccountType=$storage_account_type; `
-  deploymentsStorageAccountName=$prefix; `
   uaaUserName=$uaa_username; `
   uaaPassword=$uaa_password; `
   netToken=$pivotalDownloadAPIToken; `
@@ -246,6 +242,10 @@ Write-Host "  4. Deploy PCF Infrastructure on Azure"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./prepare-pcf-infrastructure-on-azure.sh params.json >prepare-pcf-infrastructure-on-azure.log 2>&1" -runMaxAllowedTime 2400
 # get ops man FQDN
 $opsmanfqdn = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i fqdn | awk {'print `$4'}"
+# get storage prefix
+$prefix = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure group deployment list $resourceGroup_PCF | grep -i 'storage account prefix' | awk {'print `$7'}"
+$prefix = $prefix.Substring(1)
+$prefix = '*' + $prefix + '*'
 # get pcf-lb-ip address
 $lb_ip = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "azure network public-ip show $resourceGroup_PCF pcf-lb-ip --json | jq .ipAddress | tr -d '`"'"
 Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Infrastructure of PCF on Azure is created"
@@ -260,7 +260,7 @@ $opsmanurl = "https://$opsmanfqdn"
 # upload scripts to opsman vm
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman *.py *.sh params.json ubuntu@${opsmanfqdn}:/home/ubuntu/"
 # generate manifests and cloud-config
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './gen_manifests.sh params.json $opsmanurl $lb_ip | tee gen_manifests.log'" --runMaxAllowedTime 3600
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './gen_manifests.sh params.json $opsmanurl $lb_ip $prefix | tee gen_manifests.log'" --runMaxAllowedTime 3600
 # specify the CPI in BOSH
 Write-Host "set BOSH Azure CPI v$cpi_v"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `'s/REPLACE_WITH_YOUR_CPI_URL/$cpi_v/g`' bosh-for-pcf.yml'"

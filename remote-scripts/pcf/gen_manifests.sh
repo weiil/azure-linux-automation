@@ -54,7 +54,6 @@ my_resource_group=`cat $1 | jq .resourceGroup | tr -d '"'`
 storage_account_bosh=`cat $1 | jq .boshStorage | tr -d '"'`
 cloud_storage_type=`cat $1 | jq .cloudStorageType | tr -d '"'`
 storage_account_type=`cat $1 | jq .storageAccountType | tr -d '"'`
-storage_account_deployment=`cat $1 | jq .deploymentsStorageAccountName | tr -d '"'`
 username=`cat $1 | jq .uaaUserName | tr -d '"'`
 password=`cat $1 | jq .uaaPassword | tr -d '"'`
 elastic_ver=`cat $1 | jq .elasticVersion | tr -d '"'`
@@ -64,6 +63,7 @@ cpi_ver=`cat $1 | jq .cpi | tr -d '"'`
 # input
 opsmanurl=$2
 lb=$3
+storage_account_deployment=$4
 echo 
 
 echo '######################### configure uaa'
