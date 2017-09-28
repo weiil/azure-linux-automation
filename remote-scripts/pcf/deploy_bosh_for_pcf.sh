@@ -8,4 +8,8 @@ export BOSH_INIT_LOG_PATH="./run.log"
 
 bosh-init deploy ~/bosh-for-pcf.yml
 
-bosh -n --ca-cert root_ca_certificate target 10.0.0.10
+#bosh -n --ca-cert root_ca_certificate target 10.0.0.10
+
+echo "======== bosh-for-pcf-state.json ========"
+cat bosh-for-pcf-state.json
+echo

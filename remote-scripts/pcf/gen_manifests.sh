@@ -1,40 +1,16 @@
 #!/bin/bash
-set -e
-
-# extract param.json 
-my_subscription=`cat $1 | jq .subscriptionId | tr -d '"'`
-my_tenant=`cat $1 | jq .tenantId | tr -d '"'`
-my_client=`cat $1 | jq .clientId | tr -d '"'`
-super_duper_secret=`cat $1 | jq .clientSecret | tr -d '"'`
-public_key=`cat $1 | jq .sshKey | tr -d '"'`
-private_key=`cat $1 | jq .sshPrivateKey | tr -d '"'`
-my_resource_group=`cat $1 | jq .resourceGroup | tr -d '"'`
-storage_account_bosh=`cat $1 | jq .boshStorage | tr -d '"'`
-cloud_storage_type=`cat $1 | jq .cloudStorageType | tr -d '"'`
-storage_account_type=`cat $1 | jq .storageAccountType | tr -d '"'`
-storage_account_deployment=`cat $1 | jq .deploymentsStorageAccountName | tr -d '"'`
-username=`cat $1 | jq .uaaUserName | tr -d '"'`
-password=`cat $1 | jq .uaaPassword | tr -d '"'`
-elastic_ver=`cat $1 | jq .elasticVersion | tr -d '"'`
-token=`cat $1 | jq .netToken | tr -d '"'`
-decryption_passphrase=`cat $1 | jq .decryptionPassphrase | tr -d '"'`
-
-# input
-opsmanurl=$2
-lb=$3
 
 echo '----------------------------------------- Preparation -----------------------------------------'
-
 echo
 echo '######################### install dependencies'
 sudo apt-get update
+sudo apt-get install -y jq
+sudo apt-get install -y python-dev
+sudo apt-get install -y python3-dev
 sudo apt-get install -y expect
 sudo apt-get install -y libyaml-dev
 sudo apt-get install -y python3-pip
 sudo pip3 install PyYAML
-
-# install jq if need
-sudo apt-get install -y jq
 
 sudo apt-add-repository -y ppa:brightbox/ruby-ng
 sudo apt-get update
@@ -66,6 +42,29 @@ else
   exit
 fi
 echo
+
+echo '######################### extrac params'
+my_subscription=`cat $1 | jq .subscriptionId | tr -d '"'`
+my_tenant=`cat $1 | jq .tenantId | tr -d '"'`
+my_client=`cat $1 | jq .clientId | tr -d '"'`
+super_duper_secret=`cat $1 | jq .clientSecret | tr -d '"'`
+public_key=`cat $1 | jq .sshKey | tr -d '"'`
+private_key=`cat $1 | jq .sshPrivateKey | tr -d '"'`
+my_resource_group=`cat $1 | jq .resourceGroup | tr -d '"'`
+storage_account_bosh=`cat $1 | jq .boshStorage | tr -d '"'`
+cloud_storage_type=`cat $1 | jq .cloudStorageType | tr -d '"'`
+storage_account_type=`cat $1 | jq .storageAccountType | tr -d '"'`
+storage_account_deployment=`cat $1 | jq .deploymentsStorageAccountName | tr -d '"'`
+username=`cat $1 | jq .uaaUserName | tr -d '"'`
+password=`cat $1 | jq .uaaPassword | tr -d '"'`
+elastic_ver=`cat $1 | jq .elasticVersion | tr -d '"'`
+token=`cat $1 | jq .netToken | tr -d '"'`
+decryption_passphrase=`cat $1 | jq .decryptionPassphrase | tr -d '"'`
+cpi_ver=`cat $1 | jq .cpi | tr -d '"'`
+# input
+opsmanurl=$2
+lb=$3
+echo 
 
 echo '######################### configure uaa'
 om \
@@ -184,7 +183,7 @@ om \
 }'
 echo
 
-echo '######################### fetch manifest'
+echo '######################### fetch bosh manifest'
 om \
  --target $opsmanurl \
  --username $username \
@@ -558,7 +557,7 @@ else
 fi
 echo
 
-echo '############################# fetch manifest'
+echo '############################# fetch elastic runtime manifest'
 om \
  --target $opsmanurl \
  --username $username \

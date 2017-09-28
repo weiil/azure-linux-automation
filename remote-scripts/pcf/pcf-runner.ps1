@@ -220,22 +220,21 @@ $p = @{subscriptionId=$subscriptionId; `
   netToken=$pivotalDownloadAPIToken; `
   elasticVersion=$elasticRuntimeVersion; `
   decryptionPassphrase=$decryptionPassphrase; `
+  cpi=$cpi_v; `
 }
 $p | ConvertTo-Json | Out-File params.json -Encoding utf8
 
 # upload scripts to dev vm
 RemoteCopy -uploadTo $publicIP -port $port -files '.\params.json' -username $userName -password $passwd -upload
-
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_bosh_for_pcf.sh' -username $userName -password $passwd -upload
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\deploy_pcf_on_azure.sh' -username $userName -password $passwd -upload
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\gen_manifests.sh' -username $userName -password $passwd -upload
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\start_tests.sh' -username $userName -password $passwd -upload
-
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\inject_xip_io_records.py' -username $userName -password $passwd -upload
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\download_releases.py' -username $userName -password $passwd -upload
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\json2yaml.py' -username $userName -password $passwd -upload
+RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\credentials.py' -username $userName -password $passwd -upload
 
-RemoteCopy -uploadTo $publicIP -port $port -files '..\CI\Cloud\CF\root_ca_certificate' -username $userName -password $passwd -upload
 Write-Host ""
 
 Write-Host "        grant exec permission to scripts"
@@ -258,29 +257,17 @@ Write-Host ""
 
 Write-Host "  5. Generate cloud-config, manifests of BOSH and PCF"
 $opsmanurl = "https://$opsmanfqdn"
-# generate manifests
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "./gen_manifests.sh params.json $opsmanurl $lb_ip | tee gen_manifests.log"
+# upload scripts to opsman vm
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman *.py *.sh params.json ubuntu@${opsmanfqdn}:/home/ubuntu/"RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-on-azure.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-on-azure.yml"
+# generate manifests and cloud-config
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './gen_manifests.sh params.json $opsmanurl $lb_ip | tee gen_manifests.log'"
 # specify the CPI in BOSH
 Write-Host "set BOSH Azure CPI v$cpi_v"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "sed -i 's/REPLACE_WITH_YOUR_CPI_URL/$cpi_v/g' bosh-for-pcf.yml"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "sed -i 's/REPLACE_WITH_YOUR_CPI_SHA1/$cpi_sha1/g' bosh-for-pcf.yml"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `'s/REPLACE_WITH_YOUR_CPI_URL/$cpi_v/g`' bosh-for-pcf.yml'"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `'s/REPLACE_WITH_YOUR_CPI_SHA1/$cpi_sha1/g`' bosh-for-pcf.yml'"
 Write-Host ""
 
 Write-Host "  6. Deploy BOSH director"
-# upload
-Write-Host "        upload scripts, yaml and parameter files"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman bosh-for-pcf.yml ubuntu@${opsmanfqdn}:/home/ubuntu/bosh-for-pcf.yml"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-cloud-config.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-cloud-config.yml"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman pcf-on-azure.yml ubuntu@${opsmanfqdn}:/home/ubuntu/pcf-on-azure.yml"
-
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman deploy_bosh_for_pcf.sh ubuntu@${opsmanfqdn}:/home/ubuntu/deploy_bosh_for_pcf.sh"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman deploy_pcf_on_azure.sh ubuntu@${opsmanfqdn}:/home/ubuntu/deploy_pcf_on_azure.sh"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman start_tests.sh ubuntu@${opsmanfqdn}:/home/ubuntu/start_tests.sh"
-
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman download_releases.py ubuntu@${opsmanfqdn}:/home/ubuntu/download_releases.py"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman inject_xip_io_records.py ubuntu@${opsmanfqdn}:/home/ubuntu/inject_xip_io_records.py"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman root_ca_certificate ubuntu@${opsmanfqdn}:/home/ubuntu/root_ca_certificate"
-
 # upload private key for BOSH to opsman vm
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman opsman ubuntu@${opsmanfqdn}:/home/ubuntu/bosh"
 Write-Host ""
@@ -315,7 +302,7 @@ Write-Host ""
 Write-Host "  7. Deploy PCF on Azure"
 # start the deployment of PCF
 Write-Host "        start deployment"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $director_passwd >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
 Write-Host ""
 
 $pcf_deployed = $false
@@ -337,7 +324,7 @@ Write-Host "  8. Tests"
 if($env:SmokeTest -eq $true)
 {
     Write-Host "        Start smoke tests"
-    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke $director_passwd'" -runMaxAllowedTime 3600
+    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke'" -runMaxAllowedTime 3600
     $chk_smoke = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep smoke_test_pass smoke-tests.log | wc -l'"
     $chk_smoke = $chk_smoke[-1]
     if($chk_smoke -eq '1')
@@ -354,7 +341,7 @@ if($env:SmokeTest -eq $true)
 if($env:AcceptanceTest -eq $true)
 {
     Write-Host "        Start acceptance tests"
-    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance $director_passwd'" -runMaxAllowedTime 7200
+    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance'" -runMaxAllowedTime 7200
     $chk_acceptance = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep cat_test_pass acceptance-tests.log | wc -l'"
     $chk_acceptance = $chk_acceptance[-1]
     if($chk_acceptance -eq '1')
@@ -375,8 +362,6 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.yml /home/azureuser/collect/"
 # logs (pcf, bosh, infra)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.log /home/azureuser/collect/"
-# releases and stemcell (releases.txt, stemcell.txt)
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.txt /home/azureuser/collect/"
 # tests (smoke, acceptance)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*-tests.*.tgz /home/azureuser/collect/"
 

@@ -4,13 +4,13 @@ shopt -s expand_aliases
 alias bosh='BUNDLE_GEMFILE=/home/tempest-web/tempest/web/vendor/bosh/Gemfile bundle exec bosh'
 
 test=$1
-passwd=$2
+director_passwd=`cat uaa_admin_password`
 
 # login
 echo 'Login bosh director'
 bosh login >/dev/null 2>&1 << EndOfessage
 admin
-${passwd}
+${director_passwd}
 EndOfessage
 
 if [ $test = 'smoke' ]; then

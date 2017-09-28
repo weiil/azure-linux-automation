@@ -32,12 +32,14 @@ with open(yaml_file, 'w') as f:
         json_body[key]['jobs'][0]['properties']['director']['db'] = postgres
         json_body[key]['jobs'][0]['properties']['uaadb']['address'] = "10.0.0.10"
         json_body[key]['jobs'][0]['properties']['registry']['db'] = postgres
+        json_body[key]['jobs'][0]['properties']['credhub']['data_storage']['host'] = "10.0.0.10"
 
         # private key
         json_body[key]['cloud_provider']['ssh_tunnel']['private_key'] = "~/bosh"
 
     elif filename == "pcf-cloud-config":
         key = "cloud_config"
+        json_body[key]['compilation']['az'] = 'null'
         network = json_body[key]['networks'][0]
         subnet = network['subnets'][0]
         # powerdns

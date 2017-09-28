@@ -71,7 +71,7 @@ def download(product_type, version, api_token):
     print('EULA: {}'.format(eula))
     print('Download API: {}'.format(download_api))
     accept_eula(eula, api_token)
-    cmd = 'wget --header="Authorization: Token {}" --content-disposition {}'.format(api_token, download_api)
+    cmd = 'wget -t 2 --timeout=3600 --header="Authorization: Token {}" --content-disposition {}'.format(api_token, download_api)
     print('downloading')    
     print(cmd)
     os.system(cmd)
