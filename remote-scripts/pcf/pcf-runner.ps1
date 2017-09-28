@@ -260,7 +260,7 @@ $opsmanurl = "https://$opsmanfqdn"
 # upload scripts to opsman vm
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -o StrictHostKeyChecking=no -i opsman *.py *.sh params.json ubuntu@${opsmanfqdn}:/home/ubuntu/"
 # generate manifests and cloud-config
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './gen_manifests.sh params.json $opsmanurl $lb_ip | tee gen_manifests.log'"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './gen_manifests.sh params.json $opsmanurl $lb_ip | tee gen_manifests.log'" --runMaxAllowedTime 3600
 # specify the CPI in BOSH
 Write-Host "set BOSH Azure CPI v$cpi_v"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `'s/REPLACE_WITH_YOUR_CPI_URL/$cpi_v/g`' bosh-for-pcf.yml'"
