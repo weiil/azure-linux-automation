@@ -25,8 +25,7 @@ sudo apt-get install -y om
 echo
 
 which om
-if [ $? -eq 0 ]
-then
+if [ $? -eq 0 ]; then
   echo 'om install successfully'
 else
   echo 'preparation/om: failed'
@@ -34,8 +33,7 @@ else
 fi
 
 which uaac
-if [ $? -eq 0 ]
-then
+if [ $? -eq 0 ]; then
   echo 'uaac install successfully'
 else
   echo 'preparation/uaac: failed'
@@ -227,6 +225,14 @@ upload-product \
 echo
 
 echo '############################# stage'
+cf_ver=`om \
+--target $opsmanurl \
+--username $username \
+--password $password \
+-k \
+available-products | grep cf | awk '{print $4}'`
+echo
+
 om \
 --target $opsmanurl \
 --username $username \
@@ -234,7 +240,7 @@ om \
 -k \
 stage-product \
  --product-name cf \
- --product-version $elastic_ver
+ --product-version $cf_ver
 echo
 
 echo '######################### get properties'
@@ -369,7 +375,7 @@ cert1=`echo $rsa1 | jq .certificate | tr -d '"'`
 key1=`echo $rsa1 | jq .key | tr -d '"'`
 echo
 
-echo '---> internal_mysql and service provider credentials'
+echo '---> internal'
 om \
 --target $opsmanurl \
 --username $username \
@@ -378,9 +384,21 @@ om \
 configure-product \
  --product-name cf \
  --product-properties '{
-        ".properties.uaa_database": {
-          "value": "internal_mysql"
-        },
+        ".properties.uaa": {
+          "value": "internal"
+        }
+      }'
+echo
+
+echo '---> service provider credentials'
+om \
+--target $opsmanurl \
+--username $username \
+--password $password \
+-k \
+configure-product \
+ --product-name cf \
+ --product-properties '{
         ".uaa.service_provider_key_credentials": {
           "value": {
             "cert_pem": "'"$cert1"'",
@@ -434,95 +452,27 @@ done
 echo
 
 echo '<Resource Config>'
-om \
+jobs=`om \
 --target $opsmanurl \
 --username $username \
 --password $password \
 -k \
-configure-product \
- --product-name cf \
- --product-resources '{
-  "consul_server": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "nats": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "etcd_tls_server": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "nfs_server": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "mysql_proxy": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "mysql": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "diego_database": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "uaa": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "cloud_controller": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "router": {
-    "instances": 1,
-    "internet_connected": false,
-    "elb_names": ["pcf-lb"]
-  },
-  "mysql_monitor": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "clock_global": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "cloud_controller_worker": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "diego_brain": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "diego_cell": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "loggregator_trafficcontroller": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "syslog_adapter": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "syslog_scheduler": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "doppler": {
-    "instances": 1,
-    "internet_connected": false
-  },
-  "smoke-tests": {
-    "internet_connected": false
-  }
-}'
+curl \
+ --path "/api/v0/staged/products/$cf_guid/resources" | jq ".resources | .[] | select(.instances_best_fit != 0) | .identifier" | tr -d '"'`
+
+for job in $jobs
+do
+  config=""
+  if [ $job == 'router' ]; then
+    config='{"router": {"instances": 1,"internet_connected": false,"elb_names": ["pcf-lb"]}}'
+  elif [ $job == 'push-apps-manager' -o $job == 'notifications' -o $job == 'notifications-ui' -o $job == 'push-pivotal-account' -o $job == 'autoscaling' -o $job == 'autoscaling-register-broker' -o $job == 'nfsbrokerpush' -o $job == 'bootstrap' -o $job == 'mysql-rejoin-unsafe' ]; then
+    continue 
+  else
+    config='{"'"$job"'": {"instances": 1,"internet_connected": false}}'
+  fi
+  echo $config
+  om --target $opsmanurl  --username $username  --password $password  -k configure-product --product-name cf --product-resources "$config"
+done
 echo
 
 echo '<Stemcell>'
@@ -537,8 +487,7 @@ curl "$opsmanurl/products/$cf_guid/stemcells/edit" \
 count=`cat stemcell.txt | grep 'Go to Pivotal Network and download Stemcell' | wc -l`
 test $count -eq 0
 
-if [ $? -eq 0 ]
-then
+if [ $? -eq 0 ]; then
   echo 'stemcell is ready'
 else
   echo 'stemcell is not ready'
