@@ -181,30 +181,6 @@ om \
 }'
 echo
 
-echo '######################### fetch bosh manifest'
-om \
- --target $opsmanurl \
- --username $username \
- --password $password \
- -k \
- curl \
-   --path "/api/v0/staged/director/manifest" > bosh-for-pcf.json
-
-./json2yaml.py bosh-for-pcf.json
-echo
-
-echo '######################### fetch cloud-config'
-om \
---target $opsmanurl \
---username $username \
---password $password \
--k \
-curl \
- --path "/api/v0/staged/cloud_config" > pcf-cloud-config.json
-
-./json2yaml.py pcf-cloud-config.json
-echo
-
 echo '----------------------------------------- Elastic -----------------------------------------'
 echo
 echo '######################### download'
@@ -467,6 +443,8 @@ do
     config='{"router": {"instances": 1,"internet_connected": false,"elb_names": ["pcf-lb"]}}'
   elif [ $job == 'push-apps-manager' -o $job == 'notifications' -o $job == 'notifications-ui' -o $job == 'push-pivotal-account' -o $job == 'autoscaling' -o $job == 'autoscaling-register-broker' -o $job == 'nfsbrokerpush' -o $job == 'bootstrap' -o $job == 'mysql-rejoin-unsafe' ]; then
     continue 
+  elif [ $job == 'backup-prepare' -o $job == 'ha_proxy' ];then
+    continue
   else
     config='{"'"$job"'": {"instances": 1,"internet_connected": false}}'
   fi
@@ -516,3 +494,27 @@ om \
    --path "/api/v0/staged/products/$cf_guid/manifest" > pcf-on-azure.json
 
 ./json2yaml.py pcf-on-azure.json
+
+echo '######################### fetch bosh manifest'
+om \
+ --target $opsmanurl \
+ --username $username \
+ --password $password \
+ -k \
+ curl \
+   --path "/api/v0/staged/director/manifest" > bosh-for-pcf.json
+
+./json2yaml.py bosh-for-pcf.json
+echo
+
+echo '######################### fetch cloud-config'
+om \
+--target $opsmanurl \
+--username $username \
+--password $password \
+-k \
+curl \
+ --path "/api/v0/staged/cloud_config" > pcf-cloud-config.json
+
+./json2yaml.py pcf-cloud-config.json
+echo
