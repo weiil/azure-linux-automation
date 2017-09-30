@@ -45,7 +45,16 @@ with open(yaml_file, 'w') as f:
         # powerdns
         subnet['dns'] = ["10.0.0.10"]
         subnet['reserved'] = ["10.0.0.2-10.0.0.10", "10.0.0.51-10.0.15.254"]
-        subnet['static'] = ['10.0.0.15', '10.0.0.16', '10.0.0.17', '10.0.0.18', '10.0.0.19', '10.0.0.20', '10.0.0.24', '10.0.0.25', '10.0.0.28']
+        # get all static_ipsi
+        statics = []
+        with open('pcf-on-azure.yml') as ff:
+            pcf = yaml.load(ff.read())
+            instance_groups = pcf['instance_groups']
+            for g in instance_groups:
+                statics.extend(g['networks'][0].get('static_ips',[]))
+            print(statics)
+        subnet['static'] = statics
+
     elif filename == "pcf-on-azure":
         key = "manifest"
     else:
