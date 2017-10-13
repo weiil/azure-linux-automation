@@ -72,6 +72,10 @@ if [ -e 'pcf-azure-arm-templates' ]; then
 fi
 git clone https://github.com/pivotal-cf/pcf-azure-arm-templates.git
 cd pcf-azure-arm-templates/
+
+# hotfix, checkout the old and workable template
+git checkout eaf094a3707dd5053c64ec05fab775e5e3c50ba2
+
 # chagne parameters
 echo 'Modify deploy parameters'
 sed -i "s/YOUR-STORAGE-ACCOUNT-NAME/${STORAGE_NAME}/g" azure-deploy-parameters.json
@@ -92,7 +96,7 @@ azure group deployment create -f azure-deploy.json -e azure-deploy-parameters.js
 sleep 10
 opsman_fqdn=`azure group deployment show $RESOURCE_GROUP cfdeploy | grep 'opsMan-FQDN' | awk {'print $4'}`
 storage_prefix=`azure group deployment show $RESOURCE_GROUP cfdeploy | grep 'extra Storage Account Prefix' | awk {'print $7'}`
-check_deployment=`azure group deployment list $RESOURCE_GROUP | grep 'DeploymentName' | grep 'cfdeploy1' | wc -l`
+check_deployment=`azure group deployment list $RESOURCE_GROUP | grep 'DeploymentName' | grep 'cfdeploy' | wc -l`
 check_deploymentstatus=`azure group deployment list $RESOURCE_GROUP | grep 'ProvisioningState' | grep 'Succeeded' | wc -l`
 
 if [ $check_deployment -eq 1 ]; then
