@@ -80,4 +80,9 @@ bosh -n update cloud-config ./pcf-cloud-config.yml
 echo 'Start deployments'
 bosh deployment ./pcf-on-azure.yml
 bosh -n deploy
+
+if [ $? -ne 0 ]; then
+    bosh task --debug | tee failed-task-debug.log
+fi
+
 echo '---END---'

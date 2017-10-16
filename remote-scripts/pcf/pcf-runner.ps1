@@ -288,7 +288,8 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x deploy_pcf_on_azure.sh'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x upload_releases.sh'"
 
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
+.\tools\plink.exe -P 22 -pw "$passwd" "${userName}@$publicIP"  "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'"
+#RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
 
 $pcf_deployed = $false
 $chk = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'cat deploy-PCF.log | grep Deployed | grep p-bosh | grep pcf-on-azure | wc -l'"
@@ -301,47 +302,58 @@ if($chk -eq '1')
 else
 {
     Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PCF is deployed failed"
+    Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Capture debug log of failed task. See details in failed-task-debug.log"
 }
 Write-Host ""
 
 Write-Host "  8. Tests"
-# upload scripts
-RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\start_tests.sh' -username $userName -password $passwd -upload
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman start_tests.sh ubuntu@${opsmanfqdn}:/home/ubuntu/start_tests.sh"
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x start_tests.sh'"
-## smoke-tests
-if($env:SmokeTest -eq $true)
+$chk_smoke = '0'
+$chk_acceptance = '0'
+if($pcf_deployed -eq $true)
 {
-    Write-Host "Start smoke tests"
-    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke $director_passwd'" -runMaxAllowedTime 3600
-    $chk_smoke = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep smoke_test_pass smoke-tests.log | wc -l'"
-    $chk_smoke = $chk_smoke[-1]
-    if($chk_smoke -eq '1')
-    {
-      Write-Host "  smoke tests pass!"
-    }
-    else 
-    {
-      Write-Host "  smoke tests failed!" 
-    }
+  # upload scripts
+  RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\start_tests.sh' -username $userName -password $passwd -upload
+  RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman start_tests.sh ubuntu@${opsmanfqdn}:/home/ubuntu/start_tests.sh"
+  RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x start_tests.sh'"
+  ## smoke-tests
+  if($env:SmokeTest -eq $true)
+  {
+      Write-Host "Start smoke tests"
+      RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke $director_passwd'" -runMaxAllowedTime 3600
+      $chk_smoke = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep smoke_test_pass smoke-tests.log | wc -l'"
+      $chk_smoke = $chk_smoke[-1]
+      if($chk_smoke -eq '1')
+      {
+        Write-Host "  smoke tests pass!"
+      }
+      else
+      {
+        Write-Host "  smoke tests failed!"
+      }
+  }
+
+  ## TODO: CAT
+  if($env:AcceptanceTest -eq $true)
+  {
+      Write-Host "Start acceptance tests"
+      RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance $director_passwd'" -runMaxAllowedTime 7200
+      $chk_acceptance = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep cat_test_pass acceptance-tests.log | wc -l'"
+      $chk_acceptance = $chk_acceptance[-1]
+      if($chk_acceptance -eq '1')
+      {
+        Write-Host "  acceptance tests pass!"
+      }
+      else
+      {
+        Write-Host "  acceptance tests failed!"
+      }
+  }
+}
+else
+{
+  Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Skip tests since deployment failed."
 }
 
-## TODO: CAT
-if($env:AcceptanceTest -eq $true)
-{
-    Write-Host "Start acceptance tests"
-    RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance $director_passwd'" -runMaxAllowedTime 7200
-    $chk_acceptance = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep cat_test_pass acceptance-tests.log | wc -l'"
-    $chk_acceptance = $chk_acceptance[-1]
-    if($chk_acceptance -eq '1')
-    {
-      Write-Host "  acceptance tests pass!"
-    }
-    else 
-    {
-      Write-Host "  acceptance tests failed!" 
-    }
-}
 Write-Host ""
 
 ## Collect logs and manifests
@@ -355,7 +367,8 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.txt /home/azureuser/collect/"
 # tests (smoke, acceptance)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*-tests.*.tgz /home/azureuser/collect/"
-
+# infra deployment log
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cp prepare-pcf-infrastructure-on-azure.log collect/"
 # download files to slave
 RemoteCopy -download -downloadFrom $publicIP -files "/home/azureuser/collect/*" -downloadTo ../CI -port $port -username $userName -password $passwd
 
@@ -369,5 +382,5 @@ if ($chk_smoke -eq '1' -and $chk_acceptance -eq '1')
 }
 else
 {
-  Write-Host "  Some tests are failed. resource groups will be kept." 
+  Write-Host "  Deploy PCF failed or some tests are failed. resource groups will be kept."
 }
