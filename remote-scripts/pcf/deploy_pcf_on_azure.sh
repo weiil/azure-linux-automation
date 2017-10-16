@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 shopt -s expand_aliases
 alias bosh='BUNDLE_GEMFILE=/home/tempest-web/tempest/web/vendor/bosh/Gemfile bundle exec bosh'
 
