@@ -366,7 +366,7 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 # releases and stemcell (releases.txt, stemcell.txt)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.txt /home/azureuser/collect/"
 # tests (smoke, acceptance)
-RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*-tests.*.tgz /home/azureuser/collect/"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*-tests.*.tgz /home/azureuser/collect/" -ignoreLinuxExitCode
 # infra deployment log
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cp prepare-pcf-infrastructure-on-azure.log collect/"
 # download files to slave
@@ -383,4 +383,5 @@ if ($chk_smoke -eq '1' -and $chk_acceptance -eq '1')
 else
 {
   Write-Host "  Deploy PCF failed or some tests are failed. resource groups will be kept."
+  throw "Mark build as failed."
 }
