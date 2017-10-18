@@ -91,13 +91,19 @@ Function GetFileHash([string]$url)
 }
 
 $global_latest_bosh_azure_cpi_url = "https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-azure-cpi-release"
+# runner mode
 if($cpi_v -eq 'latest')
 {
   $cpi_v = GetLatest $global_latest_bosh_azure_cpi_url
+  $cpi_url = $global_latest_bosh_azure_cpi_url + "?v=" + $cpi_v
+  $cpi_sha1 = GetFileHash($cpi_url)
 }
-$cpi_url = $global_latest_bosh_azure_cpi_url + "?v=" + $cpi_v
-$cpi_sha1 = GetFileHash($cpi_url)
-
+# debug mode
+if($cpi_v -eq 'debug')
+{
+  $cpi_url = $env:DebugCPIReleaseUrl.Trim()
+  $cpi_sha1 = $env:DebugCPIReleaseSHA1.Trim()
+}
 
 Write-Host "  1. Login Azure with Service Principle"
 $securePasswd = ConvertTo-SecureString -String $clientSecret -AsPlainText -Force
@@ -211,8 +217,15 @@ $filepath = "..\CI\Cloud\CF\bosh-for-pcf.yml"
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CLIENT_SECRET',$clientSecret) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_RESOURCE_GROUP',$resourceGroup_PCF) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_SSH_PUBLIC_KEY',$sshKey) | Set-Content $filepath
-Write-Host "set BOSH Azure CPI v$cpi_v"
-(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_URL',$cpi_v) | Set-Content $filepath
+if($cpi_v -eq "debug")
+{
+  Write-Host "[Debug]BOSH Azure CPI Release: $cpi_url"
+}
+else
+{
+  Write-Host "[Runner]BOSH Azure CPI Release: v$cpi_v"
+}
+(Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_URL',$cpi_url) | Set-Content $filepath
 (Get-Content $filepath | Out-String).Replace('REPLACE_WITH_YOUR_CPI_SHA1',$cpi_sha1) | Set-Content $filepath
 # upload bosh manifest to dev vm
 RemoteCopy -uploadTo $publicIP -port $port -files $filepath -username $userName -password $passwd -upload
@@ -367,6 +380,8 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*.txt /home/azureuser/collect/"
 # tests (smoke, acceptance)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/*-tests.*.tgz /home/azureuser/collect/" -ignoreLinuxExitCode
+# bosh state
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "scp -i opsman ubuntu@${opsmanfqdn}:/home/ubuntu/bosh-for-pcf-state.json /home/azureuser/collect/" -ignoreLinuxExitCode
 # infra deployment log
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "cp prepare-pcf-infrastructure-on-azure.log collect/"
 # download files to slave
