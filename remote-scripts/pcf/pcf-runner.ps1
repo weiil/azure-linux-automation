@@ -26,6 +26,12 @@ $location = $env:Location.Trim()
 $pivotalDownloadAPIToken = $env:Token.Trim()
 $passwd = $env:DevCliVMPassword.Trim()
 $cpi_v = $env:CPI.Trim()
+$ifKeepFailedVMs = "false"
+if($env:KeepFailedVMs -eq $true)
+{
+  $ifKeepFailedVMs = "true"
+}
+
 
 # azure cpi
 Function GetLatest([string]$url)
@@ -258,6 +264,7 @@ $localStemcell = RunLinuxCmd -username $userName -password $passwd -ip $publicIP
 $index = $localStemcell.IndexOf('bosh-stemcell')
 $localStemcell = $localStemcell.Substring($index)
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `"s/REPLACE_WITH_YOUR_LOCAL_STEMCELL/$localStemcell/`" bosh-for-pcf.yml'"
+RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'sed -i `"s/REPLACE_WITH_BOOLEAN_IF_KEEP_FAILED_VMS/$ifKeepFailedVMs/`" bosh-for-pcf.yml'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_bosh_for_pcf.sh >deploy-BOSH.log 2>&1'" -runMaxAllowedTime 5400
 # powerdns configuration here
 RemoteCopy -uploadTo $publicIP -port $port -files '.\remote-scripts\pcf\inject_xip_io_records.py' -username $userName -password $passwd -upload
@@ -301,6 +308,8 @@ RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -com
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x deploy_pcf_on_azure.sh'"
 RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'chmod a+x upload_releases.sh'"
 
+# deploy
+Write-Host "        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Start the deployment"
 .\tools\plink.exe -P 22 -pw "$passwd" "${userName}@$publicIP"  "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'"
 #RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './deploy_pcf_on_azure.sh $lb_ip $director_passwd $elasticRuntimeVersion $pivotalDownloadAPIToken >deploy-PCF.log 2>&1'" -runMaxAllowedTime 10800
 
