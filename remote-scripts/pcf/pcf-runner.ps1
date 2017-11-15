@@ -330,7 +330,9 @@ Write-Host ""
 
 Write-Host "  8. Tests"
 $chk_smoke = '0'
+$smokeEnabled = $false
 $chk_acceptance = '0'
+$CATsEnabled = $false
 if($pcf_deployed -eq $true)
 {
   # upload scripts
@@ -341,6 +343,7 @@ if($pcf_deployed -eq $true)
   if($env:SmokeTest -eq $true)
   {
       Write-Host "Start smoke tests"
+      $smokeEnabled = $true
       RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh smoke $director_passwd'" -runMaxAllowedTime 3600
       $chk_smoke = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep smoke_test_pass smoke-tests.log | wc -l'"
       $chk_smoke = $chk_smoke[-1]
@@ -358,6 +361,7 @@ if($pcf_deployed -eq $true)
   if($env:AcceptanceTest -eq $true)
   {
       Write-Host "Start acceptance tests"
+      $CATsEnabled = $true
       RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} './start_tests.sh acceptance $director_passwd'" -runMaxAllowedTime 7200
       $chk_acceptance = RunLinuxCmd -username $userName -password $passwd -ip $publicIP -port $port -command "ssh -i opsman ubuntu@${opsmanfqdn} 'grep cat_test_pass acceptance-tests.log | wc -l'"
       $chk_acceptance = $chk_acceptance[-1]
@@ -398,9 +402,32 @@ RemoteCopy -download -downloadFrom $publicIP -files "/home/azureuser/collect/*" 
 
 Write-Host ""
 Write-Host "  10. Clean resources"
-if ($chk_smoke -eq '1' -and $chk_acceptance -eq '1')
+$ifClean = $true
+if ($pcf_deployed -eq $false)
 {
-  Write-Host "  Tests are all PASS, resource groups will be deleted."
+  $ifClean = $false
+}
+else
+{
+  if ($smokeEnabled -eq $true)
+  {
+    if ($chk_smoke -ne '1')
+    {
+      $ifClean = $false
+    }
+  }
+  if ($CATsEnabled -eq $true)
+  {
+    if ($chk_acceptance -ne '1')
+    {
+      $ifClean = $false
+    }
+  }
+}
+
+if ($ifClean -eq $true)
+{
+  Write-Host "  Successful. Resource groups will be deleted."
   Remove-AzureRmResourceGroup -Name $resourceGroup_PCF -Force
   Remove-AzureRmResourceGroup -Name $resourceGroup -Force
 }
